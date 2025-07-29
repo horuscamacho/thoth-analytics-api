@@ -1,0 +1,306 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ================================
+// TENANTS & USERS
+// ================================
+
+model Tenant {
+  id          String   @id @default(cuid())
+  name        String
+  type        TenantType
+  status      TenantStatus @default(ACTIVE)
+  settings    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  users       User[]
+  tweets      Tweet[]
+  news        News[]
+  aiAnalysis  AiAnalysis[]
+  alerts      Alert[]
+  aiProcessingQueue AiProcessingQueue[]
+
+  @@map("tenants")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  tenantId  String
+  email     String   @unique
+  username  String
+  role      UserRole
+  status    UserStatus @default(ACTIVE)
+  settings  Json?
+  lastLogin DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  alerts    Alert[]
+
+  @@map("users")
+}
+
+// ================================
+// MEDIA SOURCES & TWEETS
+// ================================
+
+model MediaSource {
+  id          String   @id @default(cuid())
+  name        String
+  type        MediaType
+  baseUrl     String?
+  twitterHandle String?
+  selectors   Json?    // CSS selectors for scraping
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tweets      Tweet[]
+  news        News[]
+
+  @@map("media_sources")
+}
+
+model Tweet {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tweetId     String   @unique // Twitter's original ID
+  mediaSourceId String
+  authorName  String
+  authorHandle String
+  content     String
+  publishedAt DateTime
+  hashtags    String[]
+  mentions    String[]
+  mediaUrls   Json?    // Array of media URLs
+  engagement  Json?    // likes, retweets, etc.
+  contentHash String   // For deduplication
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  mediaSource MediaSource @relation(fields: [mediaSourceId], references: [id])
+  news        News[]
+  aiAnalysis  AiAnalysis[]
+  tweetMedia  TweetMedia[]
+
+  @@index([tenantId, publishedAt])
+  @@index([contentHash])
+  @@map("tweets")
+}
+
+model TweetMedia {
+  id       String    @id @default(cuid())
+  tweetId  String
+  type     MediaType
+  url      String
+  metadata Json?
+
+  // Relations
+  tweet    Tweet @relation(fields: [tweetId], references: [id], onDelete: Cascade)
+
+  @@map("tweet_media")
+}
+
+// ================================
+// NEWS & ANALYSIS
+// ================================
+
+model News {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tweetId     String
+  mediaSourceId String
+  title       String?
+  content     String?
+  url         String?
+  extractedAt DateTime
+  contentHash String   // For deduplication
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tweet       Tweet      @relation(fields: [tweetId], references: [id], onDelete: Cascade)
+  mediaSource MediaSource @relation(fields: [mediaSourceId], references: [id])
+  aiAnalysis  AiAnalysis[]
+
+  @@index([tenantId, extractedAt])
+  @@index([contentHash])
+  @@map("news")
+}
+
+model AiAnalysis {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tweetId     String?
+  newsId      String?
+  type        AnalysisType
+  prompt      String
+  response    Json
+  sentiment   String?
+  relevance   Float?
+  threatLevel ThreatLevel?
+  tags        String[]
+  processedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  // Relations
+  tenant      Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tweet       Tweet? @relation(fields: [tweetId], references: [id], onDelete: Cascade)
+  news        News?  @relation(fields: [newsId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, type, processedAt])
+  @@map("ai_analysis")
+}
+
+model AiProcessingQueue {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tweetId     String?
+  newsId      String?
+  queueType   QueueType
+  priority    Int      @default(5)
+  status      QueueStatus @default(PENDING)
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(3)
+  scheduledAt DateTime @default(now())
+  processedAt DateTime?
+  error       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tenant      Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status, scheduledAt])
+  @@map("ai_processing_queue")
+}
+
+// ================================
+// ALERTS SYSTEM
+// ================================
+
+model Alert {
+  id          String   @id @default(cuid())
+  tenantId    String
+  userId      String?
+  type        AlertType
+  title       String
+  message     String
+  severity    AlertSeverity
+  status      AlertStatus @default(UNREAD)
+  metadata    Json?
+  triggeredAt DateTime @default(now())
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tenant      Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status, triggeredAt])
+  @@map("alerts")
+}
+
+// ================================
+// ENUMS
+// ================================
+
+enum TenantType {
+  GOVERNMENT_STATE
+  GOVERNMENT_MUNICIPAL
+  HIGH_PROFILE
+}
+
+enum TenantStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum UserRole {
+  DIRECTOR_COMUNICACION
+  GOBERNADOR
+  SECRETARIO_GOBIERNO
+  SUBORDINADO
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum MediaType {
+  TWITTER
+  NEWS_WEBSITE
+  IMAGE
+  VIDEO
+  AUDIO
+}
+
+enum AnalysisType {
+  TWEET_ANALYSIS
+  NEWS_ANALYSIS
+  CLUSTER_ANALYSIS
+  THREAT_DETECTION
+}
+
+enum ThreatLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum QueueType {
+  TWEET_ANALYSIS
+  NEWS_ANALYSIS
+  CLUSTER_ANALYSIS
+  REACTIVATION_CHECK
+}
+
+enum QueueStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum AlertType {
+  THREAT_DETECTED
+  NEWS_MENTION
+  SENTIMENT_CHANGE
+  SYSTEM_ERROR
+  MANUAL_ALERT
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum AlertStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}

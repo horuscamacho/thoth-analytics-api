@@ -9,7 +9,7 @@ Sistema de inteligencia gubernamental para monitoreo y análisis de medios en ti
 
 ### **Stack Tecnológico Definido:**
 - **Backend:** NestJS + TypeScript
-- **Base de Datos:** PostgreSQL + Prisma ORM
+- **Base de Datos:** PostgreSQL + **Prisma ORM (ÚNICO)**
 - **Cache/Queues:** Redis + Bull Queue
 - **Tiempo Real:** WebSockets + Socket.IO
 - **IA:** OpenAI GPT-4 Mini

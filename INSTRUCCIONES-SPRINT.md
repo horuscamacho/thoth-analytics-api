@@ -249,6 +249,34 @@ Solo para sprints que tocan seguridad
 - Configuración de CI/CD
 - Benchmarks de performance base
 
+**Reglas específicas de desarrollo:**
+- ✅ **OBLIGATORIO:** Usar NestJS CLI para todos los componentes
+  - `nest generate module nombre` para módulos
+  - `nest generate service nombre` para servicios
+  - `nest generate controller nombre` para controladores
+  - `nest generate guard nombre` para guards
+  - `nest generate middleware nombre` para middlewares
+  - `nest generate decorator nombre` para decoradores
+  - `nest generate interceptor nombre` para interceptors
+- ✅ **OBLIGATORIO:** Usar ÚNICAMENTE Prisma ORM
+  - NO usar TypeORM ni otros ORMs
+  - Todas las entidades deben estar en `schema.prisma`
+  - Usar Prisma Client para todas las operaciones de BD
+  - Generar tipos automáticamente con `prisma generate`
+- ✅ **OBLIGATORIO:** Claude NO ejecuta instalaciones de paquetes
+  - Claude proporcionará el comando exacto de instalación
+  - Horus ejecutará manualmente todas las instalaciones
+  - Claude esperará confirmación antes de continuar
+  - Esto evita timeouts y errores de instalación
+- ✅ **OBLIGATORIO:** Mantener colección de API actualizada
+  - Cada endpoint nuevo/modificado debe agregarse a la colección
+  - Usar Insomnia como cliente API principal
+  - Mantener scripts de autenticación y variables de entorno
+  - Documentar ejemplos de request/response
+  - Colección debe estar en `/api-collection/`
+- ✅ Mantener estructura de carpetas por módulo
+- ✅ Seguir convenciones de nomenclatura establecidas
+
 ### **MÓDULO 2: AUTH & MULTI-TENANCY**
 **Documentar:**
 - Flujo de autenticación completo

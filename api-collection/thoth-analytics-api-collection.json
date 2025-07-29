@@ -1,0 +1,266 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2025-07-29T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "req_welcome",
+      "parentId": "fld_health",
+      "modified": 1690675200000,
+      "created": 1690675200000,
+      "_type": "request",
+      "url": "{{ _.base_url }}",
+      "name": "🏠 Welcome Message",
+      "description": "Endpoint principal que devuelve mensaje de bienvenida del sistema",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675200000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "Status is 200",
+          "code": "const response = await insomnia.send();\nexpect(response.status).to.equal(200);"
+        }
+      ]
+    },
+    {
+      "_id": "req_health_basic",
+      "parentId": "fld_health",
+      "modified": 1690675200000,
+      "created": 1690675200000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/health",
+      "name": "✅ API Health Check",
+      "description": "Health check básico del sistema - verifica que la API esté funcionando",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675100000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "Health Check Validation",
+          "code": "const response = await insomnia.send();\nconst data = JSON.parse(response.body);\n\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('status', 'ok');\nexpect(data).to.have.property('service', 'thoth-analytics-api');\nexpect(data).to.have.property('timestamp');"
+        }
+      ]
+    },
+    {
+      "_id": "req_health_db",
+      "parentId": "fld_health",
+      "modified": 1690675200000,
+      "created": 1690675200000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/health/db",
+      "name": "🗄️ Database Health Check",
+      "description": "Health check de la base de datos PostgreSQL con Prisma - verifica conectividad y versión",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675000000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "Database Connection Test",
+          "code": "const response = await insomnia.send();\nconst data = JSON.parse(response.body);\n\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('status', 'connected');\nexpect(data).to.have.property('database', 'postgresql');\nexpect(data).to.have.property('timestamp');\nexpect(data).to.have.property('version');"
+        }
+      ]
+    },
+    {
+      "_id": "req_health_redis",
+      "parentId": "fld_health",
+      "modified": 1690675200000,
+      "created": 1690675200000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/health/redis",
+      "name": "🔴 Redis Health Check",
+      "description": "Health check de Redis cache - verifica conectividad y funcionamiento",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690674900000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "Redis Connection Test",
+          "code": "const response = await insomnia.send();\nconst data = JSON.parse(response.body);\n\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('status', 'connected');\nexpect(data).to.have.property('cache', 'redis');\nexpect(data).to.have.property('timestamp');"
+        }
+      ]
+    },
+    {
+      "_id": "req_health_full",
+      "parentId": "fld_health",
+      "modified": 1690675200000,
+      "created": 1690675200000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/health/full",
+      "name": "🏥 Full System Health Check",
+      "description": "Health check completo del sistema - API, PostgreSQL y Redis",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690674800000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "Full System Health Test",
+          "code": "const response = await insomnia.send();\nconst data = JSON.parse(response.body);\n\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('status');\nexpect(data).to.have.property('services');\nexpect(data.services).to.have.property('api', 'ok');\nexpect(data.services).to.have.property('database');\nexpect(data.services).to.have.property('redis');\nexpect(data).to.have.property('timestamp');\n\n// Check if system is healthy\nconst isHealthy = data.status === 'healthy';\nconst allServicesUp = data.services.api === 'ok' && \n                     data.services.database === 'connected' && \n                     data.services.redis === 'connected';\n\nif (isHealthy && allServicesUp) {\n  console.log('🎉 All systems operational!');\n} else {\n  console.warn('⚠️ System degraded or unhealthy');\n}"
+        }
+      ]
+    },
+    {
+      "_id": "fld_health",
+      "parentId": "wrk_main",
+      "modified": 1690675200000,
+      "created": 1690675200000,
+      "_type": "request_group",
+      "name": "📊 Health Checks",
+      "description": "Endpoints para verificar el estado del sistema y sus componentes",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1690675200000
+    },
+    {
+      "_id": "wrk_main",
+      "parentId": null,
+      "modified": 1690675200000,
+      "created": 1690675200000,
+      "_type": "workspace",
+      "name": "Thoth Analytics API",
+      "description": "API para sistema de inteligencia de comunicación gubernamental",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_base",
+      "parentId": "wrk_main",
+      "modified": 1690675200000,
+      "created": 1690675200000,
+      "_type": "environment",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:3000",
+        "api_version": "v1",
+        "auth_token": "",
+        "refresh_token": "",
+        "tenant_id": "",
+        "user_id": ""
+      },
+      "dataPropertyOrder": {
+        "&": [
+          "base_url",
+          "api_version", 
+          "auth_token",
+          "refresh_token",
+          "tenant_id",
+          "user_id"
+        ]
+      },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1690675200000
+    },
+    {
+      "_id": "env_dev",
+      "parentId": "env_base",
+      "modified": 1690675200000,
+      "created": 1690675200000,
+      "_type": "environment",
+      "name": "Development",
+      "data": {
+        "base_url": "http://localhost:3000",
+        "api_version": "v1"
+      },
+      "dataPropertyOrder": {
+        "&": [
+          "base_url",
+          "api_version"
+        ]
+      },
+      "color": "#28a745",
+      "isPrivate": false,
+      "metaSortKey": 1690675100000
+    },
+    {
+      "_id": "env_prod",
+      "parentId": "env_base", 
+      "modified": 1690675200000,
+      "created": 1690675200000,
+      "_type": "environment",
+      "name": "Production",
+      "data": {
+        "base_url": "https://api.thoth.mx",
+        "api_version": "v1"
+      },
+      "dataPropertyOrder": {
+        "&": [
+          "base_url",
+          "api_version"
+        ]
+      },
+      "color": "#dc3545",
+      "isPrivate": false,
+      "metaSortKey": 1690675000000
+    }
+  ]
+}
