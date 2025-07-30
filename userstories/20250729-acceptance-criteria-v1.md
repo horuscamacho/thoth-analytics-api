@@ -22,11 +22,18 @@
 
 ### ÉPICA 1: Gestión de Usuarios
 
-#### **US-D001**: Dar de alta nuevos usuarios
+**📊 ESTADO DEL MÓDULO 2 - AUTH & MULTI-TENANCY:**
+- ✅ **COMPLETADO (85%)**: Sistema de autenticación, RBAC, multi-tenancy, CRUD usuarios/tenants
+- 🚧 **EN PROGRESO (15%)**: Sistema de auditoría avanzado con persistencia y exportación
+- 🎯 **OBJETIVO SPRINT**: Completar auditoría avanzada para cumplir US-D005 al 100%
+
+#### **US-D001**: Dar de alta nuevos usuarios ✅ **IMPLEMENTADO**
 **CRITERIOS DE ACEPTACIÓN:**
 - **DADO** que soy Director autenticado
 - **CUANDO** accedo al módulo de gestión de usuarios
 - **ENTONCES** puedo crear un nuevo usuario con los campos: nombre, email, rol, jerarquía, entidad
+
+**🔧 IMPLEMENTACIÓN:** `POST /users` - UsersController.createUser() con validación, contraseñas temporales y auditoría
 
 ✅ **Funcionales:**
 - Validación de email único en el sistema
@@ -48,11 +55,13 @@
 - Confirmación visual de creación exitosa
 - Redirección automática a lista de usuarios
 
-#### **US-D002**: Dar de baja usuarios temporalmente
+#### **US-D002**: Dar de baja usuarios temporalmente ✅ **IMPLEMENTADO**
 **CRITERIOS DE ACEPTACIÓN:**
 - **DADO** que soy Director con usuarios activos
 - **CUANDO** selecciono "suspender" en un usuario específico
 - **ENTONCES** el usuario queda inactivo pero conserva sus datos
+
+**🔧 IMPLEMENTACIÓN:** `PUT /users/:id/suspend` - UsersController.suspendUser() con razón y auditoría
 
 ✅ **Funcionales:**
 - Usuario suspendido no puede acceder al sistema
@@ -74,11 +83,13 @@
 - Indicador visual claro de usuario suspendido
 - Opción de reactivación visible
 
-#### **US-D003**: Eliminar usuarios permanentemente
+#### **US-D003**: Eliminar usuarios permanentemente ✅ **IMPLEMENTADO**
 **CRITERIOS DE ACEPTACIÓN:**
 - **DADO** que soy Director con permisos de eliminación
 - **CUANDO** confirmo eliminación permanente de un usuario
 - **ENTONCES** el usuario y sus datos asociados se eliminan irreversiblemente
+
+**🔧 IMPLEMENTACIÓN:** `DELETE /users/:id` - UsersController.deleteUser() con confirmación y auditoría pre-eliminación
 
 ✅ **Funcionales:**
 - Eliminación en cascada de datos relacionados (chats, configuraciones)
@@ -100,7 +111,7 @@
 - Warning claro sobre irreversibilidad
 - Lista de datos que serán eliminados
 
-#### **🆕 US-D005**: Auditar accesos y actividades de usuarios
+#### **🆕 US-D005**: Auditar accesos y actividades de usuarios 🚧 **85% IMPLEMENTADO**
 **CRITERIOS DE ACEPTACIÓN:**
 - **DADO** que soy Director
 - **CUANDO** accedo al módulo de auditoría
@@ -126,6 +137,28 @@
 - Dashboard visual con métricas principales
 - Timeline interactivo de actividades
 - Alertas visuales para actividades sospechosas
+
+**🔧 IMPLEMENTACIÓN TÉCNICA COMPLETADA:**
+- ✅ **AuthService**: Login/logout con JWT, validación, refresh tokens
+- ✅ **AuthController**: Endpoints /login, /logout, /refresh, /profile con guards
+- ✅ **UsersService**: CRUD completo con auditoría básica (console.log)
+- ✅ **UsersController**: Endpoints para crear, suspender, reactivar, eliminar usuarios
+- ✅ **TenantsService**: CRUD completo con auditoría básica (console.log)
+- ✅ **TenantsController**: Gestión completa de tenants multitenancy
+- ✅ **JWT Strategy & Guards**: Protección de endpoints por roles
+- ✅ **RBAC System**: Roles DIRECTOR_COMUNICACION, LIDER, DIRECTOR_AREA, ASISTENTE
+- ✅ **Multi-tenancy**: Aislamiento de datos por tenant
+- ✅ **Password Security**: Bcrypt hashing, contraseñas temporales
+
+**🚧 PENDIENTE DE IMPLEMENTAR (SPRINT 2 - FASE 2):**
+- ❌ **AuditController**: Endpoints GET /audit/logs, /audit/export, /audit/stats
+- ❌ **AuditService**: Lógica de negocio para consultas y exportación de logs
+- ❌ **AuditLogs Model**: Tabla en Prisma para persistir logs inmutables
+- ❌ **Firma Digital**: Sistema de logs firmados digitalmente para integridad
+- ❌ **Dashboard de Auditoría**: Interface visual con métricas y filtros
+- ❌ **Exportación Multi-formato**: CSV, PDF, JSON con templates
+- ❌ **Sistema de Alertas**: Detección automática de irregularidades
+- ❌ **Log Persistence**: Reemplazar console.log con persistencia real en BD
 
 ### ÉPICA 2: Dashboard y Monitoreo de Noticias
 

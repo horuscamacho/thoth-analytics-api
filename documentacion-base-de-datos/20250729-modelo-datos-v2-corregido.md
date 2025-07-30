@@ -1,7 +1,18 @@
 # MODELO DE DATOS CORREGIDO - THOTH ANALYTICS API
 **Fecha:** 29 de Julio 2025  
-**Versión:** v2.0 - Correcciones y Adiciones  
+**Versión:** v2.1 - Sprint 2 Completado + Sistema de Auditoría  
 **Base de Datos:** PostgreSQL con Prisma ORM
+
+## 📊 ESTADO DE IMPLEMENTACIÓN SPRINT 2 (30 JUL 2025)
+
+### **✅ MÓDULO 2 - AUTH & MULTI-TENANCY (85% COMPLETADO)**
+- ✅ **Sistema de Autenticación**: JWT, login/logout, refresh tokens
+- ✅ **RBAC**: Roles DIRECTOR_COMUNICACION, LIDER, DIRECTOR_AREA, ASISTENTE  
+- ✅ **Multi-tenancy**: Aislamiento completo de datos por tenant
+- ✅ **CRUD Usuarios**: Crear, suspender, reactivar, eliminar con auditoría
+- ✅ **CRUD Tenants**: Gestión completa de entidades gubernamentales
+- ✅ **Seguridad**: Bcrypt, contraseñas temporales, guards, middlewares
+- 🚧 **Sistema de Auditoría**: Logs básicos implementados, faltan endpoints avanzados
 
 ## REGISTRO DE CAMBIOS (v1.0 → v2.0)
 
@@ -307,11 +318,197 @@ WHERE mentions >= 3 AND time_span < INTERVAL '2 hours';
 
 ---
 
+## 🆕 SISTEMA DE AUDITORÍA AVANZADO (v2.1)
+
+### **NUEVA TABLA `audit_logs` - PRÓXIMA IMPLEMENTACIÓN:**
+```sql
+CREATE TABLE audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id),
+  user_id UUID REFERENCES users(id), -- NULL para acciones del sistema
+  
+  -- Información de la acción
+  action VARCHAR(100) NOT NULL, -- USER_CREATED, USER_SUSPENDED, LOGIN, etc.
+  entity_type VARCHAR(50) NOT NULL, -- user, tenant, tweet, news, etc.
+  entity_id UUID, -- ID del objeto afectado
+  
+  -- Detalles de la acción
+  old_values JSONB, -- Estado anterior del objeto
+  new_values JSONB, -- Estado nuevo del objeto
+  metadata JSONB, -- Información adicional (IP, user agent, etc.)
+  
+  -- Contexto de seguridad
+  ip_address INET,
+  user_agent TEXT,
+  session_id VARCHAR(255),
+  client_fingerprint VARCHAR(255),
+  
+  -- Integridad y firma
+  checksum VARCHAR(64) NOT NULL, -- SHA-256 del contenido
+  digital_signature TEXT, -- Firma digital para immutabilidad
+  
+  -- Timestamps
+  performed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  
+  -- Clasificación de seguridad
+  security_level ENUM('PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'SECRET') DEFAULT 'INTERNAL',
+  
+  -- Índices para búsquedas optimizadas
+  CONSTRAINT chk_audit_logs_valid_action CHECK (action ~ '^[A-Z_]+$')
+);
+
+-- Índices optimizados para queries de auditoría
+CREATE INDEX idx_audit_logs_tenant_performed ON audit_logs(tenant_id, performed_at DESC);
+CREATE INDEX idx_audit_logs_user_action ON audit_logs(user_id, action) WHERE user_id IS NOT NULL;
+CREATE INDEX idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
+CREATE INDEX idx_audit_logs_ip ON audit_logs(ip_address, performed_at) WHERE ip_address IS NOT NULL;
+CREATE INDEX idx_audit_logs_checksum ON audit_logs(checksum); -- Para verificar integridad
+
+-- Función para calcular checksum automáticamente
+CREATE OR REPLACE FUNCTION calculate_audit_checksum()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.checksum = encode(sha256(
+        (COALESCE(NEW.tenant_id::text, '') || 
+         COALESCE(NEW.user_id::text, '') ||
+         NEW.action ||
+         NEW.entity_type ||
+         COALESCE(NEW.entity_id::text, '') ||
+         COALESCE(NEW.old_values::text, '') ||
+         COALESCE(NEW.new_values::text, '') ||
+         NEW.performed_at::text)::bytea
+    ), 'hex');
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger para calcular checksum automáticamente
+CREATE TRIGGER audit_logs_checksum_trigger
+    BEFORE INSERT ON audit_logs
+    FOR EACH ROW
+    EXECUTE FUNCTION calculate_audit_checksum();
+```
+
+### **ENDPOINTS DE AUDITORÍA A IMPLEMENTAR:**
+```typescript
+// AuditController endpoints
+GET    /audit/logs              // Consultar logs con filtros
+GET    /audit/logs/:id          // Detalle de log específico
+GET    /audit/export/:format    // Exportar logs (CSV, PDF, JSON)
+GET    /audit/stats             // Estadísticas de auditoría
+GET    /audit/dashboard         // Métricas para dashboard
+POST   /audit/verify            // Verificar integridad de logs
+GET    /audit/anomalies         // Detectar actividades sospechosas
+```
+
+### **QUERIES DE AUDITORÍA AVANZADAS:**
+
+#### **1. Detectar actividades sospechosas:**
+```sql
+-- Múltiples intentos de login fallidos
+SELECT 
+  ip_address,
+  COUNT(*) as failed_attempts,
+  MIN(performed_at) as first_attempt,
+  MAX(performed_at) as last_attempt
+FROM audit_logs
+WHERE 
+  action = 'LOGIN_FAILED'
+  AND performed_at > NOW() - INTERVAL '1 hour'
+GROUP BY ip_address
+HAVING COUNT(*) >= 5;
+
+-- Accesos fuera del horario laboral
+SELECT *
+FROM audit_logs
+WHERE 
+  action IN ('LOGIN', 'USER_CREATED', 'USER_DELETED')
+  AND (EXTRACT(hour FROM performed_at) < 6 OR EXTRACT(hour FROM performed_at) > 22)
+  AND performed_at > NOW() - INTERVAL '7 days';
+```
+
+#### **2. Auditoría por usuario:**
+```sql
+-- Actividad completa de un usuario
+SELECT 
+  al.action,
+  al.entity_type,
+  al.performed_at,
+  al.ip_address,
+  al.metadata->>'reason' as reason
+FROM audit_logs al
+WHERE al.user_id = :user_id
+ORDER BY al.performed_at DESC
+LIMIT 100;
+```
+
+#### **3. Verificación de integridad:**
+```sql
+-- Verificar que todos los logs tienen checksum válido
+SELECT 
+  id,
+  checksum,
+  encode(sha256(
+    (COALESCE(tenant_id::text, '') || 
+     COALESCE(user_id::text, '') ||
+     action ||
+     entity_type ||
+     COALESCE(entity_id::text, '') ||
+     COALESCE(old_values::text, '') ||
+     COALESCE(new_values::text, '') ||
+     performed_at::text)::bytea
+  ), 'hex') as calculated_checksum
+FROM audit_logs
+WHERE checksum != encode(sha256(
+  (COALESCE(tenant_id::text, '') || 
+   COALESCE(user_id::text, '') ||
+   action ||
+   entity_type ||
+   COALESCE(entity_id::text, '') ||
+   COALESCE(old_values::text, '') ||
+   COALESCE(new_values::text, '') ||
+   performed_at::text)::bytea
+), 'hex');
+```
+
+### **IMPLEMENTACIÓN DE SERVICIOS:**
+```typescript
+// AuditService - Métodos principales
+class AuditService {
+  // Crear log de auditoría
+  async createAuditLog(data: CreateAuditLogDto): Promise<AuditLog>
+  
+  // Consultar logs con filtros
+  async getLogs(filters: AuditFilters): Promise<AuditLog[]>
+  
+  // Exportar logs en diferentes formatos
+  async exportLogs(format: 'csv' | 'pdf' | 'json', filters: AuditFilters): Promise<Buffer>
+  
+  // Obtener estadísticas
+  async getAuditStats(tenantId: string): Promise<AuditStats>
+  
+  // Detectar anomalías
+  async detectAnomalies(tenantId: string): Promise<AuditAnomaly[]>
+  
+  // Verificar integridad
+  async verifyIntegrity(tenantId: string): Promise<IntegrityReport>
+}
+```
+
+---
+
 ## MIGRATIONS NECESARIAS
 
 ```bash
-# Generar migration para v2
-npx prisma migrate dev --name add_tweet_fields_and_queues
+# Migration Sprint 2 - Fase 1 (Completado)
+npx prisma migrate dev --name add_auth_multitenancy_system
+
+# Migration Sprint 2 - Fase 2 (Próximo)
+npx prisma migrate dev --name add_audit_system
+
+# Generar migration para v2.1 (tweets + queues + audit)
+npx prisma migrate dev --name add_tweet_fields_queues_and_audit
 
 # SQL manual si es necesario
 ALTER TABLE tweets 

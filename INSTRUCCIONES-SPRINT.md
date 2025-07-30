@@ -277,13 +277,40 @@ Solo para sprints que tocan seguridad
 - ✅ Mantener estructura de carpetas por módulo
 - ✅ Seguir convenciones de nomenclatura establecidas
 
-### **MÓDULO 2: AUTH & MULTI-TENANCY**
-**Documentar:**
-- Flujo de autenticación completo
-- Estrategia de multi-tenancy
-- Configuración de JWT
-- Tests de seguridad
-- Middleware y guards creados
+### **MÓDULO 2: AUTH & MULTI-TENANCY** ✅ **85% COMPLETADO**
+**✅ IMPLEMENTADO (30 JUL 2025):**
+- ✅ Sistema de autenticación JWT completo (login/logout/refresh)
+- ✅ RBAC con roles: DIRECTOR_COMUNICACION, LIDER, DIRECTOR_AREA, ASISTENTE
+- ✅ Multi-tenancy con aislamiento completo de datos por tenant
+- ✅ CRUD completo de usuarios: crear, suspender, reactivar, eliminar
+- ✅ CRUD completo de tenants: gestión de entidades gubernamentales
+- ✅ Seguridad: bcrypt, contraseñas temporales, guards, middlewares
+- ✅ Validaciones y DTOs con class-validator
+- ✅ Tests unitarios e integración
+- ✅ Endpoints funcionales: /auth/*, /users/*, /tenants/*
+
+**🚧 EN PROGRESO - FASE 2 (30 JUL 2025):**
+- ❌ **Sistema de Auditoría Avanzado (US-D005)**:
+  - ❌ AuditLogs model en Prisma con checksum y firma digital
+  - ❌ AuditController con endpoints /audit/* (logs, export, stats)
+  - ❌ AuditService con lógica de negocio y detección de anomalías
+  - ❌ Exportación multi-formato (CSV, PDF, JSON)
+  - ❌ Dashboard de auditoría con métricas visuales
+  - ❌ Sistema de logs inmutables para compliance
+  - ❌ Reemplazar console.log con persistencia real
+
+**📋 ARCHIVOS CLAVE:**
+- `src/auth/` - Sistema de autenticación completo
+- `src/users/` - Gestión de usuarios con auditoría básica
+- `src/tenants/` - Gestión de tenants multi-tenancy
+- `src/database/` - Prisma service y configuración
+- `prisma/schema.prisma` - Modelos de datos implementados
+
+**🎯 CRITERIOS DE COMPLETITUD SPRINT 2:**
+- ✅ US-D001: Dar de alta nuevos usuarios - COMPLETADO
+- ✅ US-D002: Suspender usuarios temporalmente - COMPLETADO  
+- ✅ US-D003: Eliminar usuarios permanentemente - COMPLETADO
+- 🚧 US-D005: Auditar accesos y actividades - 85% (falta sistema avanzado)
 
 ### **MÓDULO 3: SCRAPER INTEGRATION**
 **Documentar:**
