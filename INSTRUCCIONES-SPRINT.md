@@ -312,21 +312,83 @@ Solo para sprints que tocan seguridad
 - ✅ US-D003: Eliminar usuarios permanentemente - COMPLETADO
 - 🚧 US-D005: Auditar accesos y actividades - 85% (falta sistema avanzado)
 
-### **MÓDULO 3: SCRAPER INTEGRATION**
-**Documentar:**
-- API endpoints creados
-- Formato de datos esperado
-- Validaciones implementadas
-- Rate limiting configurado
-- Healthcheck functionality
+### **MÓDULO 3: SCRAPER INTEGRATION** ✅ **COMPLETADO (30 JUL 2025)**
+**✅ IMPLEMENTADO:**
+- ✅ API endpoints: POST /scrapers/tweets, POST /scrapers/news, GET /scrapers/health, GET /scrapers/stats
+- ✅ DTOs con validaciones completas (CreateTweetDto, CreateNewsDto, ScraperResponseDto)
+- ✅ ScrapersService con lógica de negocio: detección de duplicados, transacciones, auditoría
+- ✅ Rate limiting configurable con THROTTLING_ENABLED env var
+- ✅ Healthcheck con métricas de sistema y base de datos
+- ✅ Sistema de estadísticas en tiempo real
+- ✅ Tests unitarios (ScrapersService, ScrapersController)
+- ✅ Colección Postman actualizada con 6 endpoints
 
-### **MÓDULO 4: AI PROCESSING**
+**📋 ARCHIVOS CLAVE:**
+- `src/scrapers/` - Módulo completo de scraper integration
+- `src/scrapers/dto/` - DTOs con validaciones class-validator
+- `api-collection/thoth-analytics-api-postman-collection.json` - Colección actualizada
+
+**🎯 FLUJO IMPLEMENTADO:**
+1. Scraper Python envía tweets de medios seleccionados → POST /scrapers/tweets
+2. Sistema extrae enlaces de noticias → POST /scrapers/news  
+3. Contenido se guarda en BD con hash para evitar duplicados
+4. Se crean jobs en `aiProcessingQueue` para procesamiento IA
+
+### **MÓDULO 4: AI PROCESSING** 🚧 **SPRINT ACTUAL (30 JUL 2025)**
+**🎯 OBJETIVO SPRINT 4:**
+Procesar contenido scrapeado (tweets + noticias) con análisis IA multi-capa para extraer insights profundos y detectar riesgos gubernamentales.
+
+**🔄 FLUJO DEL SISTEMA:**
+1. **Input**: Jobs pendientes en `aiProcessingQueue` de tweets/noticias scrapeadas
+2. **Procesamiento**: 4 tipos de análisis IA especializados 
+3. **Output**: Resultados almacenados en `aiAnalysis` con alertas automáticas
+
+**🚀 ANÁLISIS IA ESPECIALIZADOS (4 tipos):**
+1. **Text Analysis**: Resumen ejecutivo, categorización, keywords, complejidad
+2. **Sentiment Analysis**: Sentimiento, emociones, urgencia, bias detection  
+3. **Entity Recognition**: Personas políticas, organizaciones, ubicaciones, entidades gubernamentales
+4. **Risk Assessment**: Score de riesgo, categorías, impacto en gobernanza, acciones recomendadas
+
+**⚙️ CONFIGURACIÓN OPENAI OPTIMIZADA:**
+```typescript
+{
+  model: 'gpt-4o-mini',        // Más económico y rápido
+  temperature: 0.3,            // Balance precisión/creatividad  
+  max_tokens: 2000,            // Suficiente para análisis detallado
+  response_format: { type: 'json_object' }  // Estructura consistente
+}
+```
+
+**🔧 COMPONENTES A IMPLEMENTAR:**
+- **AiProcessingModule**: Módulo principal con service, controller, cliente OpenAI
+- **AiAnalysisService**: 4 métodos de análisis especializado con prompts optimizados
+- **AiProcessingController**: Endpoints para monitoreo y gestión de procesamiento
+- **QueueProcessor**: Worker para procesar jobs de `aiProcessingQueue` por prioridades
+- **Cost Tracking**: Monitoreo de gastos OpenAI por operación
+- **Alert System**: Alertas automáticas por risk score y sentiment crítico
+
+**🎯 USER STORIES SPRINT 4:**
+- **US-AI001**: Como sistema, quiero analizar tweets y noticias scrapeadas para extraer insights
+- **US-AI002**: Como sistema, quiero detectar riesgos en contenido monitoreado  
+- **US-AI003**: Como sistema, quiero identificar entidades políticas relevantes
+- **US-AI004**: Como administrador, quiero monitorear costos de procesamiento IA
+- **US-AI005**: Como sistema, quiero generar alertas por contenido crítico
+
+**📊 CRITERIOS DE COMPLETITUD:**
+- [ ] AiProcessingModule con service y controller implementados
+- [ ] 4 tipos de análisis IA funcionando con prompts especializados
+- [ ] Worker de queue procesando jobs automáticamente
+- [ ] Sistema de alertas por risk score > umbral
+- [ ] Tracking de costos OpenAI por operación
+- [ ] Tests unitarios con 80%+ cobertura
+- [ ] Endpoints funcionales para monitoreo
+
 **Documentar:**
-- Integración con OpenAI
-- Prompts utilizados y optimizaciones
-- Costos por operación
-- Manejo de errores
-- Cache strategy
+- Integración con OpenAI y cliente configurado
+- Prompts especializados utilizados y optimizaciones
+- Costos por operación y tracking implementado
+- Manejo de errores y retry logic
+- Sistema de queue y prioridades
 
 ### **MÓDULO 5: DASHBOARD & VISUALIZATION**
 **Documentar:**

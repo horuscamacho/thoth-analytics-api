@@ -14,6 +14,7 @@ import { CommonModule } from './common/common.module';
 import { ConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
 import { ScrapersModule } from './scrapers/scrapers.module';
+import { AiProcessingModule } from './ai-processing/ai-processing.module';
 import redisConfig from './config/redis.config';
 
 @Module({
@@ -44,6 +45,7 @@ import redisConfig from './config/redis.config';
     CommonModule,
     ConfigModule,
     ScrapersModule,
+    AiProcessingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
