@@ -4,6 +4,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { TenantsModule } from './tenants/tenants.module';
+import { AuditModule } from './audit/audit.module';
 import { TweetsModule } from './tweets/tweets.module';
 import { NewsModule } from './news/news.module';
 import { AiAnalysisModule } from './ai-analysis/ai-analysis.module';
@@ -32,6 +34,8 @@ import redisConfig from './config/redis.config';
     // Feature modules
     AuthModule,
     UsersModule,
+    TenantsModule,
+    AuditModule,
     TweetsModule,
     NewsModule,
     AiAnalysisModule,
