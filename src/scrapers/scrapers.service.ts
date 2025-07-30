@@ -75,7 +75,7 @@ export class ScrapersService {
       }
 
       // Create tweet with transaction
-      const result = await this.prisma.$transaction(async (tx) => {
+      const result = await this.prisma.$transaction(async (tx: any) => {
         // Create tweet
         const tweet = await tx.tweet.create({
           data: {
@@ -92,6 +92,15 @@ export class ScrapersService {
             mediaUrls: createTweetDto.mediaUrls ? JSON.parse(JSON.stringify(createTweetDto.mediaUrls)) : {},
             engagement: createTweetDto.engagement ? JSON.parse(JSON.stringify(createTweetDto.engagement)) : {},
             contentHash: contentHash,
+            // Nuevos campos agregados
+            mediaCount: createTweetDto.mediaCount || (createTweetDto.mediaUrls?.length || 0),
+            retweetCount: createTweetDto.retweetCount || createTweetDto.engagement?.retweetCount || 0,
+            likeCount: createTweetDto.likeCount || createTweetDto.engagement?.likeCount || 0,
+            replyCount: createTweetDto.replyCount || createTweetDto.engagement?.replyCount || 0,
+            isRetweet: createTweetDto.isRetweet || false,
+            originalTweetId: createTweetDto.originalTweetId || null,
+            language: createTweetDto.language || 'es',
+            locationMentioned: createTweetDto.locationMentioned || null,
             createdAt: new Date(),
           }
         });
@@ -207,7 +216,7 @@ export class ScrapersService {
       }
 
       // Create news with transaction
-      const result = await this.prisma.$transaction(async (tx) => {
+      const result = await this.prisma.$transaction(async (tx: any) => {
         // Create news
         const news = await tx.news.create({
           data: {

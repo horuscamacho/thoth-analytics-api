@@ -135,7 +135,7 @@ export class AuditService {
         where: { tenantId, userId: { not: null } },
         select: { userId: true },
         distinct: ['userId'],
-      }).then(users => users.length),
+      }).then((users: any[]) => users.length),
       
       // Top actions
       this.prisma.auditLog.groupBy({
@@ -149,12 +149,12 @@ export class AuditService {
       // Activity by hour (last 24 hours)
       this.prisma.$queryRaw`
         SELECT 
-          EXTRACT(hour FROM performed_at) as hour,
+          EXTRACT(hour FROM "performedAt") as hour,
           COUNT(*) as count
-        FROM audit_logs 
-        WHERE tenant_id = ${tenantId} 
-          AND performed_at >= ${new Date(Date.now() - 24 * 60 * 60 * 1000)}
-        GROUP BY EXTRACT(hour FROM performed_at)
+        FROM "audit_logs" 
+        WHERE "tenantId" = ${tenantId} 
+          AND "performedAt" >= ${new Date(Date.now() - 24 * 60 * 60 * 1000)}
+        GROUP BY EXTRACT(hour FROM "performedAt")
         ORDER BY hour
       `,
       
@@ -170,24 +170,24 @@ export class AuditService {
       // Unusual hours (outside 6 AM - 10 PM)
       this.prisma.$queryRaw`
         SELECT COUNT(*) as count
-        FROM audit_logs 
-        WHERE tenant_id = ${tenantId}
-          AND performed_at >= ${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
-          AND (EXTRACT(hour FROM performed_at) < 6 OR EXTRACT(hour FROM performed_at) > 22)
+        FROM "audit_logs" 
+        WHERE "tenantId" = ${tenantId}
+          AND "performedAt" >= ${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
+          AND (EXTRACT(hour FROM "performedAt") < 6 OR EXTRACT(hour FROM "performedAt") > 22)
       `,
       
       // Multiple IPs per user
       this.prisma.$queryRaw`
         SELECT COUNT(*) as count
         FROM (
-          SELECT user_id, COUNT(DISTINCT ip_address) as ip_count
-          FROM audit_logs 
-          WHERE tenant_id = ${tenantId}
-            AND user_id IS NOT NULL
-            AND ip_address IS NOT NULL
-            AND performed_at >= ${new Date(Date.now() - 24 * 60 * 60 * 1000)}
-          GROUP BY user_id
-          HAVING COUNT(DISTINCT ip_address) > 3
+          SELECT "userId", COUNT(DISTINCT "ipAddress") as ip_count
+          FROM "audit_logs" 
+          WHERE "tenantId" = ${tenantId}
+            AND "userId" IS NOT NULL
+            AND "ipAddress" IS NOT NULL
+            AND "performedAt" >= ${new Date(Date.now() - 24 * 60 * 60 * 1000)}
+          GROUP BY "userId"
+          HAVING COUNT(DISTINCT "ipAddress") > 3
         ) as multiple_ip_users
       `
     ]);
@@ -196,7 +196,7 @@ export class AuditService {
       totalLogs,
       todayLogs,
       uniqueUsers,
-      topActions: topActions.map(action => ({
+      topActions: topActions.map((action: any) => ({
         action: action.action,
         count: action._count.action,
       })),
@@ -248,13 +248,13 @@ export class AuditService {
 
     // Detect unusual activity hours
     const unusualHourActivity = await this.prisma.$queryRaw`
-      SELECT user_id, ip_address, COUNT(*) as count
-      FROM audit_logs 
-      WHERE tenant_id = ${tenantId}
-        AND performed_at >= ${oneDayAgo}
-        AND (EXTRACT(hour FROM performed_at) < 6 OR EXTRACT(hour FROM performed_at) > 22)
-        AND user_id IS NOT NULL
-      GROUP BY user_id, ip_address
+      SELECT "userId", "ipAddress", COUNT(*) as count
+      FROM "audit_logs" 
+      WHERE "tenantId" = ${tenantId}
+        AND "performedAt" >= ${oneDayAgo}
+        AND (EXTRACT(hour FROM "performedAt") < 6 OR EXTRACT(hour FROM "performedAt") > 22)
+        AND "userId" IS NOT NULL
+      GROUP BY "userId", "ipAddress"
       HAVING COUNT(*) >= 10
     ` as any[];
 
@@ -274,18 +274,18 @@ export class AuditService {
     // Detect rapid consecutive actions
     const rapidActions = await this.prisma.$queryRaw`
       SELECT 
-        user_id, 
-        ip_address,
+        "userId", 
+        "ipAddress",
         COUNT(*) as count,
-        MAX(performed_at) - MIN(performed_at) as time_span
-      FROM audit_logs 
-      WHERE tenant_id = ${tenantId}
-        AND performed_at >= ${oneHourAgo}
-        AND user_id IS NOT NULL
-      GROUP BY user_id, ip_address
+        MAX("performedAt") - MIN("performedAt") as time_span
+      FROM "audit_logs" 
+      WHERE "tenantId" = ${tenantId}
+        AND "performedAt" >= ${oneHourAgo}
+        AND "userId" IS NOT NULL
+      GROUP BY "userId", "ipAddress"
       HAVING 
         COUNT(*) >= 50 
-        AND MAX(performed_at) - MIN(performed_at) < INTERVAL '5 minutes'
+        AND MAX("performedAt") - MIN("performedAt") < INTERVAL '5 minutes'
     ` as any[];
 
     for (const item of rapidActions) {

@@ -29,12 +29,17 @@ export class AppService {
   }> {
     try {
       const dbInfo = await this.prisma.getDatabaseInfo();
-      return {
+      const result: any = {
         status: dbInfo.connected ? 'connected' : 'disconnected',
         database: 'postgresql',
-        version: dbInfo.version,
         timestamp: new Date().toISOString(),
       };
+      
+      if (dbInfo.version) {
+        result.version = dbInfo.version;
+      }
+      
+      return result;
     } catch {
       return {
         status: 'disconnected',

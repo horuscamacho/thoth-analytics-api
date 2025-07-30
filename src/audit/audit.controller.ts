@@ -10,6 +10,7 @@ import {
   Res,
   BadRequestException,
 } from '@nestjs/common';
+import { AuditEntityType } from '@prisma/client';
 import { Response } from 'express';
 import { AuditService } from './audit.service';
 import { AuditFiltersDto, ExportFormat } from './dto';
@@ -95,9 +96,8 @@ export class AuditController {
     };
   }
 
-  @Post('verify')
+  @Get('integrity')
   @ROLES('DIRECTOR_COMUNICACION')
-  @HttpCode(HttpStatus.OK)
   async verifyIntegrity(@CURRENT_USER() currentUser: ICurrentUser) {
     const report = await this.auditService.verifyIntegrity(currentUser.tenantId);
     
@@ -107,10 +107,11 @@ export class AuditController {
     };
   }
 
-  @Get('export/:format')
+  @Post('export')
   @ROLES('DIRECTOR_COMUNICACION')
+  @HttpCode(HttpStatus.OK)
   async exportLogs(
-    @Param('format') format: string,
+    @Query('format') format: string = 'csv',
     @Query() filters: AuditFiltersDto,
     @CURRENT_USER() currentUser: ICurrentUser,
     @Res() res: Response,
@@ -171,6 +172,61 @@ export class AuditController {
           criticalAnomalies: anomalies.filter(a => a.severity === 'CRITICAL').length,
           highAnomalies: anomalies.filter(a => a.severity === 'HIGH').length,
         },
+      },
+    };
+  }
+
+  @Get('entity/:entityType/:entityId')
+  @ROLES('DIRECTOR_COMUNICACION')
+  async getEntityLogs(
+    @Param('entityType') entityType: string,
+    @Param('entityId') entityId: string,
+    @Query() filters: AuditFiltersDto,
+    @CURRENT_USER() currentUser: ICurrentUser,
+  ) {
+    const entityTypeUpper = entityType.toUpperCase() as AuditEntityType;
+    
+    // Validate entityType is valid
+    if (!Object.values(AuditEntityType).includes(entityTypeUpper)) {
+      throw new BadRequestException(`Invalid entity type. Valid types: ${Object.values(AuditEntityType).join(', ')}`);
+    }
+
+    const result = await this.auditService.getLogs(currentUser.tenantId, {
+      ...filters,
+      entityType: entityTypeUpper,
+      entityId,
+    });
+    
+    return {
+      message: `Audit logs for ${entityType} ${entityId} retrieved successfully`,
+      data: result.logs,
+      pagination: {
+        total: result.total,
+        limit: filters.limit || 50,
+        offset: filters.offset || 0,
+      },
+    };
+  }
+
+  @Get('users/:userId/activity')
+  @ROLES('DIRECTOR_COMUNICACION')
+  async getUserActivity(
+    @Param('userId') userId: string,
+    @Query() filters: AuditFiltersDto,
+    @CURRENT_USER() currentUser: ICurrentUser,
+  ) {
+    const result = await this.auditService.getLogs(currentUser.tenantId, {
+      ...filters,
+      userId,
+    });
+    
+    return {
+      message: `User activity for ${userId} retrieved successfully`,
+      data: result.logs,
+      pagination: {
+        total: result.total,
+        limit: filters.limit || 50,
+        offset: filters.offset || 0,
       },
     };
   }

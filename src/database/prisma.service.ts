@@ -1,54 +1,27 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  constructor() {
-    super({
-      log: ['query', 'info', 'warn', 'error'],
-      errorFormat: 'colorless',
-    });
+  async onModuleInit() {
+    await this.$connect();
+    console.log('✅ Database connected successfully');
   }
 
-  async onModuleInit(): Promise<void> {
-    try {
-      await this.$connect();
-      // eslint-disable-next-line no-console
-      console.log('✅ Prisma connected to database');
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('❌ Failed to connect to database:', error);
-      throw error;
-    }
-  }
-
-  async onModuleDestroy(): Promise<void> {
+  async onModuleDestroy() {
     await this.$disconnect();
-    // eslint-disable-next-line no-console
-    console.log('✅ Prisma disconnected from database');
+    console.log('❌ Database disconnected');
   }
 
-  // Health check method
-  async isHealthy(): Promise<boolean> {
+  async getDatabaseInfo(): Promise<{ connected: boolean; version?: string }> {
     try {
-      await this.$queryRaw`SELECT 1`;
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  // Get database info
-  async getDatabaseInfo(): Promise<{ version: string; connected: boolean }> {
-    try {
-      const result = await this.$queryRaw<[{ version: string }]>`SELECT version()`;
+      const result = await this.$queryRaw<{ version: string }[]>`SELECT version()`;
       return {
-        version: result[0]?.version || 'unknown',
         connected: true,
+        version: result[0]?.version || 'Unknown',
       };
-    } catch {
+    } catch (error) {
       return {
-        version: 'unknown',
         connected: false,
       };
     }

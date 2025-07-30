@@ -5,6 +5,7 @@ import { AiProcessingController } from './ai-processing/ai-processing.controller
 import { PromptsService } from './prompts/prompts.service';
 import { DatabaseModule } from '../database/database.module';
 import { AuditModule } from '../audit/audit.module';
+import { QueueProcessorService } from './queue-processor/queue-processor.service';
 
 @Module({
   imports: [
@@ -12,7 +13,7 @@ import { AuditModule } from '../audit/audit.module';
     DatabaseModule,
     AuditModule,
   ],
-  providers: [AiAnalysisService, PromptsService],
+  providers: [AiAnalysisService, PromptsService, QueueProcessorService],
   controllers: [AiProcessingController],
   exports: [AiAnalysisService]
 })

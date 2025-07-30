@@ -26,10 +26,13 @@ Durante la revisión colaborativa se identificaron omisiones críticas:
 
 #### **1. TABLA `tweets` - CAMPOS AGREGADOS:**
 ```sql
--- NUEVOS CAMPOS AGREGADOS A TWEETS
+-- CAMPOS IMPLEMENTADOS EN TWEETS
+author_name VARCHAR(255),           -- Nombre del autor del tweet
+author_handle VARCHAR(255),         -- Handle/username del autor  
 hashtags TEXT[],                    -- Crítico para detectar tendencias
 mentions TEXT[],                    -- Identificar a quién mencionan
 media_urls JSONB,                   -- URLs de imágenes/videos del tweet
+engagement JSONB,                   -- Métricas de engagement generalizadas
 media_count INTEGER DEFAULT 0,      -- Cantidad de media attachments
 retweet_count INTEGER DEFAULT 0,    -- Métricas de viralidad
 like_count INTEGER DEFAULT 0,       -- Engagement metrics
@@ -70,16 +73,16 @@ CREATE TABLE ai_processing_queue (
   -- Control de procesamiento
   attempts INTEGER DEFAULT 0,
   max_attempts INTEGER DEFAULT 3,
-  scheduled_for TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  scheduled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Renombrado para consistencia
   processing_started_at TIMESTAMP,
-  processing_completed_at TIMESTAMP,
+  processed_at TIMESTAMP, -- Renombrado para consistencia con schema.prisma
   
   -- Resultados y errores
-  error_message TEXT,
+  error TEXT, -- Renombrado para consistencia
   error_details JSONB,
   
   -- Referencias a resultados
-  analysis_id UUID REFERENCES ai_analysis(id),
+  analysis_id UUID, -- Referencias a ai_analysis
   
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -104,8 +107,8 @@ CREATE INDEX idx_ai_queue_scheduled ON ai_processing_queue(scheduled_for);
 CREATE TABLE tweet_media (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tweet_id UUID NOT NULL REFERENCES tweets(id),
-  media_type ENUM('image', 'video', 'gif') NOT NULL,
-  media_url TEXT NOT NULL,
+  type ENUM('IMAGE', 'VIDEO', 'AUDIO') NOT NULL, -- MediaType enum
+  url TEXT NOT NULL,
   thumbnail_url TEXT,
   duration_seconds INTEGER, -- Para videos
   alt_text TEXT, -- Texto alternativo para accesibilidad
@@ -116,6 +119,7 @@ CREATE TABLE tweet_media (
   -- Análisis futuro de media
   contains_text BOOLEAN, -- ¿Tiene texto en la imagen?
   ocr_text TEXT, -- Texto extraído si aplica
+  metadata JSONB, -- Metadata adicional
   
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -305,6 +309,14 @@ WHERE mentions >= 3 AND time_span < INTERVAL '2 hours';
 2. **Auditoría**: Track completo de procesamiento
 3. **Queries complejas**: Priorización por múltiples factores
 4. **Transaccionalidad**: Atomicidad con el resto de datos
+
+### **MediaSource sin tenantId**
+Los media sources son globales y no pertenecen a un tenant específico, pueden ser usados por múltiples tenants.
+
+### **Enums adicionales implementados**
+- **TenantStatus**: ACTIVE, INACTIVE, SUSPENDED - Control de estado de tenants
+- **UserStatus**: ACTIVE, INACTIVE, SUSPENDED - Control de estado de usuarios
+- **AlertStatus**: UNREAD, READ, ARCHIVED - Control de estado de alertas
 
 ### **¿Por qué media_urls como JSONB?**
 1. **Flexibilidad**: Twitter puede cambiar estructura

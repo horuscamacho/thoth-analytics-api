@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Put, Delete } from '@nestjs/common';
 import { AiAnalysisService, CompleteAnalysisResult } from '../ai-analysis/ai-analysis.service';
 import { PrismaService } from '../../database/prisma.service';
+import { QueueProcessorService } from '../queue-processor/queue-processor.service';
 // TODO: Enable auth when guards are working
 // import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 // import { RolesGuard } from '../../auth/guards/roles.guard';
@@ -51,6 +52,7 @@ export class AiProcessingController {
   constructor(
     private readonly aiAnalysisService: AiAnalysisService,
     private readonly prisma: PrismaService,
+    private readonly queueProcessor: QueueProcessorService,
   ) {}
 
   @Post('analyze')
@@ -60,7 +62,7 @@ export class AiProcessingController {
     // @GetUser() user: any,
   ): Promise<CompleteAnalysisResult> {
     // TODO: Get tenantId from authenticated user
-    const tenantId = 'temp-tenant-id';
+    const tenantId = 'hidalgo-gobierno-estatal';
     return await this.aiAnalysisService.performCompleteAnalysis(
       manualAnalysisDto.contentId,
       manualAnalysisDto.contentType,
@@ -74,7 +76,7 @@ export class AiProcessingController {
   // @ROLES('DIRECTOR_COMUNICACION', 'LIDER', 'DIRECTOR_AREA')
   async getAnalysisById(@Param('id') id: string /*, @GetUser() user: any*/) {
     // TODO: Get tenantId from authenticated user
-    const tenantId = 'temp-tenant-id';
+    const tenantId = 'hidalgo-gobierno-estatal';
     const analysis = await this.prisma.aiAnalysis.findFirst({
       where: { 
         id: id,
@@ -122,7 +124,7 @@ export class AiProcessingController {
     const skip = (pageNum - 1) * limitNum;
 
     // TODO: Get tenantId from authenticated user
-    const tenantId = 'temp-tenant-id';
+    const tenantId = 'hidalgo-gobierno-estatal';
     const where: any = {
       tenantId: tenantId,
     };
@@ -286,6 +288,93 @@ export class AiProcessingController {
       completed,
       failed,
       total: pending + processing + completed + failed,
+    };
+  }
+
+  @Get('queue/worker/stats')
+  // @ROLES('DIRECTOR_COMUNICACION')
+  async getWorkerStats(/* @GetUser() user: any */) {
+    return await this.queueProcessor.getWorkerStats();
+  }
+
+  @Put('queue/retry/:id')
+  // @ROLES('DIRECTOR_COMUNICACION')
+  async retryFailedJob(
+    @Param('id') jobId: string,
+    /* @GetUser() user: any */
+  ) {
+    // TODO: Verify job belongs to user's tenant
+    await this.queueProcessor.retryFailedJob(jobId);
+    return { message: 'Job scheduled for retry', jobId };
+  }
+
+  @Delete('queue/cancel/:id')
+  // @ROLES('DIRECTOR_COMUNICACION')
+  async cancelPendingJob(
+    @Param('id') jobId: string,
+    /* @GetUser() user: any */
+  ) {
+    // TODO: Verify job belongs to user's tenant
+    await this.queueProcessor.cancelPendingJob(jobId);
+    return { message: 'Job cancelled', jobId };
+  }
+
+  @Post('queue/worker/start')
+  // @ROLES('DIRECTOR_COMUNICACION')
+  async startWorker() {
+    this.queueProcessor.startProcessing();
+    return { message: 'Queue processor started' };
+  }
+
+  @Post('queue/worker/stop')
+  // @ROLES('DIRECTOR_COMUNICACION')
+  async stopWorker() {
+    this.queueProcessor.stopProcessing();
+    return { message: 'Queue processor stopped' };
+  }
+
+  @Get('queue/jobs')
+  // @ROLES('DIRECTOR_COMUNICACION', 'LIDER')
+  async getQueueJobs(
+    @Query('status') status?: string,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '20',
+  ) {
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    const where: any = {
+      tenantId: 'temp-tenant-id', // TODO: Get from auth
+    };
+
+    if (status) {
+      where.status = status.toUpperCase();
+    }
+
+    const [jobs, total] = await Promise.all([
+      this.prisma.aiProcessingQueue.findMany({
+        where,
+        skip,
+        take: limitNum,
+        orderBy: [
+          { priority: 'desc' },
+          { scheduledAt: 'desc' },
+        ],
+        include: {
+        }
+      }),
+      this.prisma.aiProcessingQueue.count({ where })
+    ]);
+
+    return {
+      data: jobs,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      }
     };
   }
 }

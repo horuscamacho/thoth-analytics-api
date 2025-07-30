@@ -96,6 +96,14 @@ model Tweet {
   mentions    String[]
   mediaUrls   Json?    // Array of media URLs
   engagement  Json?    // likes, retweets, etc.
+  mediaCount  Int      @default(0)
+  retweetCount Int     @default(0)
+  likeCount   Int      @default(0)
+  replyCount  Int      @default(0)
+  isRetweet   Boolean  @default(false)
+  originalTweetId String?
+  language    String   @default("es")
+  locationMentioned String?
   contentHash String   // For deduplication
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -117,6 +125,14 @@ model TweetMedia {
   tweetId  String
   type     MediaType
   url      String
+  thumbnailUrl String?
+  durationSeconds Int?
+  altText  String?
+  width    Int?
+  height   Int?
+  fileSizeBytes Int?
+  containsText Boolean?
+  ocrText  String?
   metadata Json?
 
   // Relations
@@ -188,8 +204,11 @@ model AiProcessingQueue {
   attempts    Int      @default(0)
   maxAttempts Int      @default(3)
   scheduledAt DateTime @default(now())
+  processingStartedAt DateTime?
   processedAt DateTime?
   error       String?
+  errorDetails Json?
+  analysisId  String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

@@ -87,6 +87,13 @@ export interface RiskAssessmentResult {
   affectedLocations: string[];
 }
 
+export interface AnalysisResult<T> {
+  analysis: T;
+  inputTokens: number;
+  outputTokens: number;
+  cost: number;
+}
+
 export interface CompleteAnalysisResult {
   id: string;
   textAnalysis: TextAnalysisResult;
@@ -95,6 +102,8 @@ export interface CompleteAnalysisResult {
   riskAssessment: RiskAssessmentResult;
   processingTime: number;
   totalCost: number;
+  inputTokens: number;
+  outputTokens: number;
   analysisDate: string;
 }
 
@@ -102,6 +111,10 @@ export interface CompleteAnalysisResult {
 export class AiAnalysisService {
   private readonly logger = new Logger(AiAnalysisService.name);
   private openai: OpenAI;
+  
+  // Precios actuales de OpenAI para gpt-4o-mini (por 1K tokens)
+  private readonly INPUT_TOKEN_COST = 0.00015; // $0.00015 per 1K input tokens
+  private readonly OUTPUT_TOKEN_COST = 0.0006; // $0.0006 per 1K output tokens
 
   constructor(
     private readonly configService: ConfigService,
@@ -128,27 +141,37 @@ export class AiAnalysisService {
   ): Promise<CompleteAnalysisResult> {
     const startTime = Date.now();
     const analysisId = crypto.randomUUID();
+    let totalInputTokens = 0;
+    let totalOutputTokens = 0;
     
     try {
       this.logger.log(`Starting complete analysis for ${contentType} ${contentId}`);
 
       // Realizar los 4 análisis en paralelo para optimizar tiempo
-      const [textAnalysis, sentimentAnalysis, entityRecognition] = await Promise.all([
+      const [textResult, sentimentResult, entityResult] = await Promise.all([
         this.performTextAnalysis(title, content),
         this.performSentimentAnalysis(title, content),
         this.performEntityRecognition(title, content)
       ]);
 
+      // Acumular tokens de los primeros 3 análisis
+      totalInputTokens += textResult.inputTokens + sentimentResult.inputTokens + entityResult.inputTokens;
+      totalOutputTokens += textResult.outputTokens + sentimentResult.outputTokens + entityResult.outputTokens;
+
       // Risk assessment con contexto de sentiment y entities
-      const riskAssessment = await this.performRiskAssessment(
+      const riskResult = await this.performRiskAssessment(
         title, 
         content, 
-        sentimentAnalysis.sentimentScore,
-        entityRecognition
+        sentimentResult.analysis.sentimentScore,
+        entityResult.analysis
       );
 
+      // Acumular tokens del risk assessment
+      totalInputTokens += riskResult.inputTokens;
+      totalOutputTokens += riskResult.outputTokens;
+
       const processingTime = Date.now() - startTime;
-      const totalCost = this.calculateTotalCost([textAnalysis, sentimentAnalysis, entityRecognition, riskAssessment]);
+      const totalCost = this.calculateRealCost(totalInputTokens, totalOutputTokens);
 
       // Guardar resultados en base de datos
       await this.saveAnalysisResults({
@@ -156,16 +179,18 @@ export class AiAnalysisService {
         tenantId,
         contentId,
         contentType,
-        textAnalysis,
-        sentimentAnalysis,
-        entityRecognition,
-        riskAssessment,
+        textAnalysis: textResult.analysis,
+        sentimentAnalysis: sentimentResult.analysis,
+        entityRecognition: entityResult.analysis,
+        riskAssessment: riskResult.analysis,
         processingTime,
-        totalCost
+        totalCost,
+        inputTokens: totalInputTokens,
+        outputTokens: totalOutputTokens
       });
 
       // Generar alertas si es necesario
-      await this.generateAlertsIfNeeded(analysisId, tenantId, riskAssessment, sentimentAnalysis);
+      await this.generateAlertsIfNeeded(analysisId, tenantId, riskResult.analysis, sentimentResult.analysis);
 
       // Log de auditoría
       await this.auditService.logAction(
@@ -180,22 +205,26 @@ export class AiAnalysisService {
           contentId,
           processingTime,
           totalCost,
-          riskScore: riskAssessment.overallRiskScore,
-          urgencyLevel: riskAssessment.interventionUrgency
+          inputTokens: totalInputTokens,
+          outputTokens: totalOutputTokens,
+          riskScore: riskResult.analysis.overallRiskScore,
+          urgencyLevel: riskResult.analysis.interventionUrgency
         },
         { source: 'ai-analysis', analysisTypes: 4 }
       );
 
-      this.logger.log(`Complete analysis finished for ${contentId} in ${processingTime}ms`);
+      this.logger.log(`Complete analysis finished for ${contentId} in ${processingTime}ms - Cost: $${totalCost.toFixed(6)}`);
 
       return {
         id: analysisId,
-        textAnalysis,
-        sentimentAnalysis,
-        entityRecognition,
-        riskAssessment,
+        textAnalysis: textResult.analysis,
+        sentimentAnalysis: sentimentResult.analysis,
+        entityRecognition: entityResult.analysis,
+        riskAssessment: riskResult.analysis,
         processingTime,
         totalCost,
+        inputTokens: totalInputTokens,
+        outputTokens: totalOutputTokens,
         analysisDate: new Date().toISOString()
       };
 
@@ -205,7 +234,7 @@ export class AiAnalysisService {
     }
   }
 
-  async performTextAnalysis(title: string, content: string): Promise<TextAnalysisResult> {
+  async performTextAnalysis(title: string, content: string): Promise<AnalysisResult<TextAnalysisResult>> {
     const prompt = this.promptsService.getTextAnalysisPrompt(title, content);
     
     const response = await this.openai.chat.completions.create({
@@ -223,11 +252,23 @@ export class AiAnalysisService {
     if (!responseContent) {
       throw new Error('No content received from OpenAI');
     }
-    const result = JSON.parse(responseContent);
-    return result as TextAnalysisResult;
+    
+    const usage = response.usage;
+    const inputTokens = usage?.prompt_tokens || 0;
+    const outputTokens = usage?.completion_tokens || 0;
+    const cost = this.calculateRealCost(inputTokens, outputTokens);
+    
+    const analysis = JSON.parse(responseContent) as TextAnalysisResult;
+    
+    return {
+      analysis,
+      inputTokens,
+      outputTokens,
+      cost
+    };
   }
 
-  async performSentimentAnalysis(title: string, content: string): Promise<SentimentAnalysisResult> {
+  async performSentimentAnalysis(title: string, content: string): Promise<AnalysisResult<SentimentAnalysisResult>> {
     const prompt = this.promptsService.getSentimentAnalysisPrompt(title, content);
     
     const response = await this.openai.chat.completions.create({
@@ -245,11 +286,23 @@ export class AiAnalysisService {
     if (!responseContent) {
       throw new Error('No content received from OpenAI');
     }
-    const result = JSON.parse(responseContent);
-    return result as SentimentAnalysisResult;
+    
+    const usage = response.usage;
+    const inputTokens = usage?.prompt_tokens || 0;
+    const outputTokens = usage?.completion_tokens || 0;
+    const cost = this.calculateRealCost(inputTokens, outputTokens);
+    
+    const analysis = JSON.parse(responseContent) as SentimentAnalysisResult;
+    
+    return {
+      analysis,
+      inputTokens,
+      outputTokens,
+      cost
+    };
   }
 
-  async performEntityRecognition(title: string, content: string): Promise<EntityRecognitionResult> {
+  async performEntityRecognition(title: string, content: string): Promise<AnalysisResult<EntityRecognitionResult>> {
     const prompt = this.promptsService.getEntityRecognitionPrompt(title, content);
     
     const response = await this.openai.chat.completions.create({
@@ -267,8 +320,20 @@ export class AiAnalysisService {
     if (!responseContent) {
       throw new Error('No content received from OpenAI');
     }
-    const result = JSON.parse(responseContent);
-    return result as EntityRecognitionResult;
+    
+    const usage = response.usage;
+    const inputTokens = usage?.prompt_tokens || 0;
+    const outputTokens = usage?.completion_tokens || 0;
+    const cost = this.calculateRealCost(inputTokens, outputTokens);
+    
+    const analysis = JSON.parse(responseContent) as EntityRecognitionResult;
+    
+    return {
+      analysis,
+      inputTokens,
+      outputTokens,
+      cost
+    };
   }
 
   async performRiskAssessment(
@@ -276,7 +341,7 @@ export class AiAnalysisService {
     content: string, 
     sentimentScore?: number,
     entities?: EntityRecognitionResult
-  ): Promise<RiskAssessmentResult> {
+  ): Promise<AnalysisResult<RiskAssessmentResult>> {
     const prompt = this.promptsService.getRiskAssessmentPrompt(title, content, sentimentScore, entities);
     
     const response = await this.openai.chat.completions.create({
@@ -294,20 +359,26 @@ export class AiAnalysisService {
     if (!responseContent) {
       throw new Error('No content received from OpenAI');
     }
-    const result = JSON.parse(responseContent);
-    return result as RiskAssessmentResult;
+    
+    const usage = response.usage;
+    const inputTokens = usage?.prompt_tokens || 0;
+    const outputTokens = usage?.completion_tokens || 0;
+    const cost = this.calculateRealCost(inputTokens, outputTokens);
+    
+    const analysis = JSON.parse(responseContent) as RiskAssessmentResult;
+    
+    return {
+      analysis,
+      inputTokens,
+      outputTokens,
+      cost
+    };
   }
 
-  private calculateTotalCost(analyses: any[]): number {
-    // Estimación basada en tokens promedio para gpt-4o-mini
-    // Input: ~$0.00015 per 1K tokens, Output: ~$0.0006 per 1K tokens
-    const avgInputTokens = 1500; // Prompts + content
-    const avgOutputTokens = 800; // Respuesta JSON
-    const inputCost = (avgInputTokens / 1000) * 0.00015;
-    const outputCost = (avgOutputTokens / 1000) * 0.0006;
-    const costPerAnalysis = inputCost + outputCost;
-    
-    return Number((costPerAnalysis * analyses.length).toFixed(6));
+  private calculateRealCost(inputTokens: number, outputTokens: number): number {
+    const inputCost = (inputTokens / 1000) * this.INPUT_TOKEN_COST;
+    const outputCost = (outputTokens / 1000) * this.OUTPUT_TOKEN_COST;
+    return Number((inputCost + outputCost).toFixed(6));
   }
 
   private async saveAnalysisResults(data: {
@@ -321,16 +392,17 @@ export class AiAnalysisService {
     riskAssessment: RiskAssessmentResult;
     processingTime: number;
     totalCost: number;
+    inputTokens: number;
+    outputTokens: number;
   }): Promise<void> {
-    // TODO: Update schema to match new analysis structure
-    // For now, we'll use the existing schema with basic data
+    // Guardar análisis completo con estructura optimizada
     await this.prisma.aiAnalysis.create({
       data: {
         id: data.id,
         tenantId: data.tenantId,
         tweetId: data.contentType === 'tweet' ? data.contentId : null,
         newsId: data.contentType === 'news' ? data.contentId : null,
-        type: data.contentType === 'tweet' ? 'TWEET_ANALYSIS' : 'NEWS_ANALYSIS', // Using existing enum
+        type: data.contentType === 'tweet' ? 'TWEET_ANALYSIS' : 'NEWS_ANALYSIS',
         prompt: 'AI Complete Analysis (4 types)',
         response: JSON.parse(JSON.stringify({
           textAnalysis: data.textAnalysis,
@@ -339,9 +411,11 @@ export class AiAnalysisService {
           riskAssessment: data.riskAssessment,
           processingTime: data.processingTime,
           totalCost: data.totalCost,
+          inputTokens: data.inputTokens,
+          outputTokens: data.outputTokens,
         })),
         sentiment: data.sentimentAnalysis.overallSentiment,
-        relevance: data.riskAssessment.overallRiskScore / 100, // Convert to 0-1 scale
+        relevance: data.riskAssessment.overallRiskScore / 100,
         threatLevel: data.riskAssessment.overallRiskScore > 70 ? 'HIGH' : 
                     data.riskAssessment.overallRiskScore > 40 ? 'MEDIUM' : 'LOW',
         tags: data.textAnalysis.keywords,
@@ -361,8 +435,8 @@ export class AiAnalysisService {
     // Alerta por alto riesgo
     if (riskAssessment.overallRiskScore > 70) {
       alerts.push({
-        type: 'HIGH_RISK_CONTENT',
-        severity: 'HIGH',
+        type: 'THREAT_DETECTED',
+        severity: riskAssessment.overallRiskScore >= 80 ? 'CRITICAL' : 'WARNING',
         title: 'Contenido de Alto Riesgo Detectado',
         description: `Risk Score: ${riskAssessment.overallRiskScore}/100. Urgencia: ${riskAssessment.interventionUrgency}`,
         metadata: { riskScore: riskAssessment.overallRiskScore, analysisId }
@@ -372,8 +446,8 @@ export class AiAnalysisService {
     // Alerta por sentimiento muy negativo
     if (sentimentAnalysis.sentimentScore < -0.7 && sentimentAnalysis.intensity > 0.8) {
       alerts.push({
-        type: 'NEGATIVE_SENTIMENT',
-        severity: 'MEDIUM',
+        type: 'SENTIMENT_CHANGE',
+        severity: 'WARNING',
         title: 'Sentimiento Muy Negativo Detectado',
         description: `Sentiment: ${sentimentAnalysis.sentimentScore} con intensidad ${sentimentAnalysis.intensity}`,
         metadata: { sentimentScore: sentimentAnalysis.sentimentScore, analysisId }
@@ -383,7 +457,7 @@ export class AiAnalysisService {
     // Alerta por urgencia crítica
     if (riskAssessment.interventionUrgency === 'critical') {
       alerts.push({
-        type: 'CRITICAL_INTERVENTION',
+        type: 'THREAT_DETECTED',
         severity: 'CRITICAL',
         title: 'Intervención Crítica Requerida',
         description: `Situación crítica detectada. Acciones recomendadas: ${riskAssessment.recommendedActions.join(', ')}`,

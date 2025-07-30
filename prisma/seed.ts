@@ -127,6 +127,88 @@ async function main(): Promise<void> {
 
   console.log(`✅ Gobernador (LIDER) created with ID: ${gobernadorUser.id}`);
 
+  // Create sample media source
+  const mediaSource = await prisma.mediaSource.upsert({
+    where: {
+      id: 'dummy-media-source-001',
+    },
+    update: {
+      name: 'Test Media Source',
+      updatedAt: new Date(),
+    },
+    create: {
+      id: 'dummy-media-source-001',
+      name: 'Test Media Source',
+      type: 'NEWS_WEBSITE',
+      baseUrl: 'https://example.com',
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+
+  console.log(`✅ Media source created: ${mediaSource.name}`);
+
+  // Create sample tweet for testing
+  const sampleTweet = await prisma.tweet.upsert({
+    where: {
+      id: 'dummy-tweet-001',
+    },
+    update: {
+      content: 'Nuevo programa gubernamental para educación digital en México. El gobierno anunció inversión de 5 mil millones de pesos para beneficiar a 2 millones de estudiantes. #EducacionDigital #Mexico',
+      updatedAt: new Date(),
+    },
+    create: {
+      id: 'dummy-tweet-001',
+      tenantId: sampleTenant.id,
+      tweetId: 'tweet-12345',
+      mediaSourceId: mediaSource.id,
+      authorName: 'Gobierno de México',
+      authorHandle: '@GobiernoMX',
+      content: 'Nuevo programa gubernamental para educación digital en México. El gobierno anunció inversión de 5 mil millones de pesos para beneficiar a 2 millones de estudiantes. #EducacionDigital #Mexico',
+      publishedAt: new Date(),
+      hashtags: ['EducacionDigital', 'Mexico', 'Gobierno'],
+      mentions: ['@SEP_mx', '@SCT_mx'],
+      mediaCount: 0,
+      retweetCount: 124,
+      likeCount: 456,
+      replyCount: 23,
+      isRetweet: false,
+      language: 'es',
+      contentHash: crypto.createHash('sha256').update('dummy-tweet-content').digest('hex'),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+
+  console.log(`✅ Sample tweet created with ID: ${sampleTweet.id}`);
+
+  // Create sample news for testing
+  const sampleNews = await prisma.news.upsert({
+    where: {
+      id: '3406fa27-8b3a-468f-b12a-a03413f17cc4',
+    },
+    update: {
+      title: 'Nuevo programa gubernamental para educación digital en México',
+      updatedAt: new Date(),
+    },
+    create: {
+      id: '3406fa27-8b3a-468f-b12a-a03413f17cc4',
+      tenantId: sampleTenant.id,
+      tweetId: sampleTweet.id,
+      mediaSourceId: mediaSource.id,
+      title: 'Nuevo programa gubernamental para educación digital en México',
+      content: 'El gobierno mexicano anunció hoy un ambicioso programa de educación digital que beneficiará a más de 2 millones de estudiantes en todo el país. La iniciativa incluye la distribución de tablets, capacitación docente y mejora de infraestructura tecnológica en escuelas públicas. El presupuesto asignado es de 5 mil millones de pesos y se implementará durante los próximos 3 años. Los estados priorizados son Oaxaca, Chiapas y Guerrero, donde los índices de conectividad son menores. La Secretaría de Educación Pública coordinará el programa junto con la Secretaría de Comunicaciones y Transportes.',
+      url: 'https://example.com/news/educacion-digital',
+      extractedAt: new Date(),
+      contentHash: crypto.createHash('sha256').update('dummy-news-content').digest('hex'),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+
+  console.log(`✅ Sample news created with ID: ${sampleNews.id}`);
+
   console.log('🌱 Database seeding completed successfully!');
   console.log('');
   console.log('🔑 Login credentials:');

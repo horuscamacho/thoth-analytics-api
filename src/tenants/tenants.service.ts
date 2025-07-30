@@ -368,7 +368,7 @@ export class TenantsService {
 
     // Process user stats by role
     const usersByRole: Record<string, number> = {};
-    userStats.forEach((stat) => {
+    userStats.forEach((stat: any) => {
       usersByRole[stat.role] = (usersByRole[stat.role] || 0) + stat._count;
     });
 
@@ -402,7 +402,7 @@ export class TenantsService {
 
     // Process alert stats by severity
     const alertsBySeverity: Record<string, number> = {};
-    alertStats.forEach((stat) => {
+    alertStats.forEach((stat: any) => {
       alertsBySeverity[stat.severity] = (alertsBySeverity[stat.severity] || 0) + stat._count;
     });
 

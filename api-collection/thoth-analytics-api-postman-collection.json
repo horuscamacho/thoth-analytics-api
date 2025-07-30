@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
     "name": "Thoth Analytics API - Sprint 04",
-    "description": "Colección completa de endpoints para Thoth Analytics API con autenticación JWT, multi-tenancy, sistema de auditoría, scraper integration y AI processing con análisis multi-capa",
+    "description": "Colección completa de endpoints para Thoth Analytics API con autenticación JWT, multi-tenancy, sistema de auditoría, scraper integration y AI processing con análisis multi-capa. ✅ TODOS LOS ENDPOINTS PROBADOS Y FUNCIONANDO - Sprint 4 COMPLETADO (30 JUL 2025)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "12345678"
   },
@@ -1621,6 +1621,270 @@
           "response": []
         },
         {
+          "name": "Queue Worker Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Worker stats structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('isRunning');",
+                  "    pm.expect(jsonData).to.have.property('stats');",
+                  "    pm.expect(jsonData).to.have.property('config');",
+                  "    pm.expect(jsonData.stats).to.have.property('pending');",
+                  "    pm.expect(jsonData.stats).to.have.property('processing');",
+                  "    pm.expect(jsonData.stats).to.have.property('completed');",
+                  "    pm.expect(jsonData.stats).to.have.property('failed');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('⚙️ ESTADÍSTICAS DEL WORKER:');",
+                  "console.log('🔄 Estado:', response.isRunning ? 'Ejecutándose' : 'Detenido');",
+                  "console.log('📊 Jobs pendientes:', response.stats.pending);",
+                  "console.log('⚡ Jobs procesando:', response.stats.processing);",
+                  "console.log('✅ Jobs completados:', response.stats.completed);",
+                  "console.log('❌ Jobs fallidos:', response.stats.failed);",
+                  "console.log('📈 Total:', response.stats.total);",
+                  "console.log('⏱️ Tiempo promedio:', Math.round(response.stats.averageProcessingTimeMs) + 'ms');",
+                  "console.log('🔧 Batch size:', response.config.batchSize);",
+                  "console.log('⏰ Intervalo:', response.config.processingIntervalMs + 'ms');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ai-processing/queue/worker/stats",
+              "host": ["{{base_url}}"],
+              "path": ["ai-processing", "queue", "worker", "stats"]
+            },
+            "description": "Obtener estadísticas detalladas del worker de procesamiento: estado, configuración, métricas"
+          },
+          "response": []
+        },
+        {
+          "name": "Queue Jobs List",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Jobs list structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "    pm.expect(jsonData).to.have.property('pagination');",
+                  "    pm.expect(jsonData.pagination).to.have.property('page');",
+                  "    pm.expect(jsonData.pagination).to.have.property('limit');",
+                  "    pm.expect(jsonData.pagination).to.have.property('total');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('📋 LISTA DE JOBS:');",
+                  "console.log('📊 Total jobs:', response.pagination.total);",
+                  "console.log('📄 Página:', response.pagination.page + '/' + response.pagination.pages);",
+                  "console.log('🔢 Jobs en página:', response.data.length);",
+                  "",
+                  "if (response.data.length > 0) {",
+                  "    const job = response.data[0];",
+                  "    console.log('🔸 Primer job:');",
+                  "    console.log('  📌 ID:', job.id);",
+                  "    console.log('  📊 Estado:', job.status);",
+                  "    console.log('  🎯 Prioridad:', job.priority);",
+                  "    console.log('  🔄 Intentos:', job.attempts);",
+                  "    console.log('  📅 Programado:', new Date(job.scheduledAt).toLocaleString());",
+                  "    ",
+                  "    // Guardar ID del primer job para otros tests",
+                  "    pm.collectionVariables.set('first_job_id', job.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ai-processing/queue/jobs?page=1&limit=10&status=PENDING",
+              "host": ["{{base_url}}"],
+              "path": ["ai-processing", "queue", "jobs"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "description": "PENDING, PROCESSING, COMPLETED, FAILED"
+                }
+              ]
+            },
+            "description": "Obtener lista paginada de jobs con filtros opcionales por estado"
+          },
+          "response": []
+        },
+        {
+          "name": "Start Worker",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Success message\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.contain('started');",
+                  "});",
+                  "",
+                  "console.log('🚀 Worker iniciado correctamente');",
+                  "console.log('⚡ El procesamiento automático está activo');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ai-processing/queue/worker/start",
+              "host": ["{{base_url}}"],
+              "path": ["ai-processing", "queue", "worker", "start"]
+            },
+            "description": "Iniciar el worker de procesamiento de cola manualmente"
+          },
+          "response": []
+        },
+        {
+          "name": "Stop Worker",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Success message\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.contain('stopped');",
+                  "});",
+                  "",
+                  "console.log('🛑 Worker detenido correctamente');",
+                  "console.log('⏸️ El procesamiento automático está pausado');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ai-processing/queue/worker/stop",
+              "host": ["{{base_url}}"],
+              "path": ["ai-processing", "queue", "worker", "stop"]
+            },
+            "description": "Detener el worker de procesamiento de cola manualmente"
+          },
+          "response": []
+        },
+        {
+          "name": "Retry Failed Job",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Retry confirmation\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData).to.have.property('jobId');",
+                  "    pm.expect(jsonData.message).to.contain('retry');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('♻️ Job programado para reintento');",
+                  "console.log('🆔 Job ID:', response.jobId);",
+                  "console.log('✅ El job volverá a procesarse automáticamente');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ai-processing/queue/retry/{{first_job_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["ai-processing", "queue", "retry", "{{first_job_id}}"]
+            },
+            "description": "Reintentar un job que falló. Solo funciona con jobs en estado FAILED"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Pending Job",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Cancel confirmation\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData).to.have.property('jobId');",
+                  "    pm.expect(jsonData.message).to.contain('cancelled');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('🚫 Job cancelado correctamente');",
+                  "console.log('🆔 Job ID:', response.jobId);",
+                  "console.log('❌ El job no será procesado');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ai-processing/queue/cancel/{{first_job_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["ai-processing", "queue", "cancel", "{{first_job_id}}"]
+            },
+            "description": "Cancelar un job pendiente. Solo funciona con jobs en estado PENDING"
+          },
+          "response": []
+        },
+        {
           "name": "Analyze Tweet Sample",
           "event": [
             {
@@ -1736,6 +2000,11 @@
     },
     {
       "key": "last_analysis_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "first_job_id",
       "value": "",
       "type": "string"
     }

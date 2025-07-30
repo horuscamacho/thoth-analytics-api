@@ -11,6 +11,7 @@ import {
   ValidateNested,
   IsNumber,
   Min,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -49,6 +50,41 @@ export class MediaUrlDto {
   @IsOptional()
   @IsString()
   thumbnailUrl?: string;
+
+  // Nuevos campos agregados para tweet_media según migración
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  durationSeconds?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  altText?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  width?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  height?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  fileSizeBytes?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  containsText?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  ocrText?: string;
 }
 
 export class CreateTweetDto {
@@ -114,4 +150,44 @@ export class CreateTweetDto {
   @MinLength(32)
   @MaxLength(32)
   tenantId!: string;
+
+  // Nuevos campos agregados según migración 20250730191420_add_missing_fields
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  mediaCount?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  retweetCount?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  likeCount?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  replyCount?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isRetweet?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  originalTweetId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  language?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  locationMentioned?: string;
 }
