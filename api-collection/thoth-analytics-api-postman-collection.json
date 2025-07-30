@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-    "name": "Thoth Analytics API - Sprint 03",
-    "description": "Colección completa de endpoints para Thoth Analytics API con autenticación JWT, multi-tenancy, sistema de auditoría y scraper integration",
+    "name": "Thoth Analytics API - Sprint 04",
+    "description": "Colección completa de endpoints para Thoth Analytics API con autenticación JWT, multi-tenancy, sistema de auditoría, scraper integration y AI processing con análisis multi-capa",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "12345678"
   },
@@ -1296,6 +1296,375 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "🤖 AI Processing",
+      "item": [
+        {
+          "name": "Manual Analysis",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Analysis structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('textAnalysis');",
+                  "    pm.expect(jsonData).to.have.property('sentimentAnalysis');",
+                  "    pm.expect(jsonData).to.have.property('entityRecognition');",
+                  "    pm.expect(jsonData).to.have.property('riskAssessment');",
+                  "    pm.expect(jsonData).to.have.property('processingTime');",
+                  "    pm.expect(jsonData).to.have.property('totalCost');",
+                  "});",
+                  "",
+                  "// Guardar ID del análisis para otros tests",
+                  "const response = pm.response.json();",
+                  "pm.collectionVariables.set('last_analysis_id', response.id);",
+                  "",
+                  "console.log('🤖 ANÁLISIS IA COMPLETADO:');",
+                  "console.log('📊 ID:', response.id);",
+                  "console.log('⏱️ Tiempo procesamiento:', response.processingTime + 'ms');",
+                  "console.log('💰 Costo total:', '$' + response.totalCost);",
+                  "console.log('📝 Categoría:', response.textAnalysis?.primaryCategory);",
+                  "console.log('😊 Sentimiento:', response.sentimentAnalysis?.overallSentiment);",
+                  "console.log('⚠️ Risk Score:', response.riskAssessment?.overallRiskScore + '/100');",
+                  "console.log('🚨 Urgency:', response.riskAssessment?.interventionUrgency);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentType\": \"news\",\n  \"contentId\": \"{{$randomUUID}}\",\n  \"title\": \"Nuevo programa gubernamental para educación digital en México\",\n  \"content\": \"El gobierno mexicano anunció hoy un ambicioso programa de educación digital que beneficiará a más de 2 millones de estudiantes en todo el país. La iniciativa incluye la distribución de tablets, capacitación docente y mejora de infraestructura tecnológica en escuelas públicas. El presupuesto asignado es de 5 mil millones de pesos y se implementará durante los próximos 3 años. Los estados priorizados son Oaxaca, Chiapas y Guerrero, donde los índices de conectividad son menores. La Secretaría de Educación Pública coordinará el programa junto con la Secretaría de Comunicaciones y Transportes.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ai-processing/analyze",
+              "host": ["{{base_url}}"],
+              "path": ["ai-processing", "analyze"]
+            },
+            "description": "Realizar análisis manual completo de contenido (4 tipos: texto, sentimiento, entidades, riesgo)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Analysis by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Analysis data structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('response');",
+                  "    pm.expect(jsonData).to.have.property('sentiment');",
+                  "    pm.expect(jsonData).to.have.property('relevance');",
+                  "    pm.expect(jsonData).to.have.property('threatLevel');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('📋 ANÁLISIS RECUPERADO:');",
+                  "console.log('🆔 ID:', response.id);",
+                  "console.log('📊 Tipo:', response.type);",
+                  "console.log('😊 Sentimiento:', response.sentiment);",
+                  "console.log('🎯 Relevancia:', (response.relevance * 100).toFixed(1) + '%');",
+                  "console.log('⚠️ Nivel amenaza:', response.threatLevel);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ai-processing/analysis/{{last_analysis_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["ai-processing", "analysis", "{{last_analysis_id}}"]
+            },
+            "description": "Obtener análisis específico por ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Analyses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Pagination structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "    pm.expect(jsonData).to.have.property('pagination');",
+                  "    pm.expect(jsonData.pagination).to.have.property('page');",
+                  "    pm.expect(jsonData.pagination).to.have.property('limit');",
+                  "    pm.expect(jsonData.pagination).to.have.property('total');",
+                  "    pm.expect(jsonData.pagination).to.have.property('pages');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('📊 LISTA DE ANÁLISIS:');",
+                  "console.log('📄 Página:', response.pagination.page + '/' + response.pagination.pages);",
+                  "console.log('📋 Total análisis:', response.pagination.total);",
+                  "console.log('🔍 Análisis en página:', response.data.length);",
+                  "",
+                  "if (response.data.length > 0) {",
+                  "    console.log('🎯 Último análisis:');",
+                  "    const latest = response.data[0];",
+                  "    console.log('  📊 Tipo:', latest.type);",
+                  "    console.log('  😊 Sentimiento:', latest.sentiment);",
+                  "    console.log('  ⚠️ Amenaza:', latest.threatLevel);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ai-processing/analyses?page=1&limit=10&contentType=news",
+              "host": ["{{base_url}}"],
+              "path": ["ai-processing", "analyses"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "contentType",
+                  "value": "news"
+                },
+                {
+                  "key": "riskLevel",
+                  "value": "high",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtener lista paginada de análisis con filtros opcionales"
+          },
+          "response": []
+        },
+        {
+          "name": "Processing Statistics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Stats structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('totalAnalyses');",
+                  "    pm.expect(jsonData).to.have.property('todayAnalyses');",
+                  "    pm.expect(jsonData).to.have.property('totalCost');",
+                  "    pm.expect(jsonData).to.have.property('todayCost');",
+                  "    pm.expect(jsonData).to.have.property('averageProcessingTime');",
+                  "    pm.expect(jsonData).to.have.property('riskDistribution');",
+                  "    pm.expect(jsonData).to.have.property('sentimentDistribution');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('📈 ESTADÍSTICAS IA PROCESSING:');",
+                  "console.log('📊 Total análisis:', response.totalAnalyses);",
+                  "console.log('📅 Análisis hoy:', response.todayAnalyses);",
+                  "console.log('💰 Costo total:', '$' + response.totalCost.toFixed(4));",
+                  "console.log('💸 Costo hoy:', '$' + response.todayCost.toFixed(4));",
+                  "console.log('⏱️ Tiempo promedio:', response.averageProcessingTime + 'ms');",
+                  "console.log('⚠️ Distribución riesgo:', JSON.stringify(response.riskDistribution));",
+                  "console.log('😊 Distribución sentimiento:', JSON.stringify(response.sentimentDistribution));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ai-processing/stats",
+              "host": ["{{base_url}}"],
+              "path": ["ai-processing", "stats"]
+            },
+            "description": "Obtener estadísticas de procesamiento IA: análisis totales, costos, tiempos, distribuciones"
+          },
+          "response": []
+        },
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Health structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "    pm.expect(jsonData).to.have.property('services');",
+                  "    pm.expect(jsonData).to.have.property('responseTime');",
+                  "    pm.expect(jsonData.services).to.have.property('database');",
+                  "    pm.expect(jsonData.services).to.have.property('openai');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('🏥 HEALTH CHECK AI PROCESSING:');",
+                  "console.log('✅ Status:', response.status);",
+                  "console.log('🗄️ Database:', response.services.database);",
+                  "console.log('🤖 OpenAI:', response.services.openai);",
+                  "console.log('⚡ Response time:', response.responseTime + 'ms');",
+                  "",
+                  "if (response.status === 'healthy') {",
+                  "    console.log('🎉 Todos los servicios funcionando correctamente');",
+                  "} else {",
+                  "    console.log('⚠️ Algunos servicios tienen problemas');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ai-processing/health",
+              "host": ["{{base_url}}"],
+              "path": ["ai-processing", "health"]
+            },
+            "description": "Verificar estado de salud del servicio de procesamiento IA"
+          },
+          "response": []
+        },
+        {
+          "name": "Queue Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Queue status structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('pending');",
+                  "    pm.expect(jsonData).to.have.property('processing');",
+                  "    pm.expect(jsonData).to.have.property('completed');",
+                  "    pm.expect(jsonData).to.have.property('failed');",
+                  "    pm.expect(jsonData).to.have.property('total');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('🔄 ESTADO DE LA COLA IA:');",
+                  "console.log('⏳ Pendientes:', response.pending);",
+                  "console.log('🔄 Procesando:', response.processing);",
+                  "console.log('✅ Completados:', response.completed);",
+                  "console.log('❌ Fallidos:', response.failed);",
+                  "console.log('📊 Total:', response.total);",
+                  "",
+                  "const completionRate = response.total > 0 ? ((response.completed / response.total) * 100).toFixed(1) : 0;",
+                  "console.log('📈 Tasa de éxito:', completionRate + '%');",
+                  "",
+                  "if (response.pending > 10) {",
+                  "    console.log('⚠️ Cola con muchos jobs pendientes');",
+                  "} else if (response.failed > 5) {",
+                  "    console.log('🚨 Muchos jobs fallidos - revisar configuración');",
+                  "} else {",
+                  "    console.log('✅ Cola funcionando normalmente');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ai-processing/queue/status",
+              "host": ["{{base_url}}"],
+              "path": ["ai-processing", "queue", "status"]
+            },
+            "description": "Obtener estado de la cola de procesamiento IA: jobs pendientes, procesando, completados, fallidos"
+          },
+          "response": []
+        },
+        {
+          "name": "Analyze Tweet Sample",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('🐦 ANÁLISIS DE TWEET:');",
+                  "console.log('📊 Risk Score:', response.riskAssessment?.overallRiskScore + '/100');",
+                  "console.log('😊 Sentiment:', response.sentimentAnalysis?.overallSentiment + ' (' + response.sentimentAnalysis?.sentimentScore + ')');",
+                  "console.log('🏛️ Entidades gobierno:', response.entityRecognition?.governmentEntities?.length || 0);",
+                  "console.log('👥 Personas:', response.entityRecognition?.persons?.length || 0);",
+                  "console.log('📍 Ubicaciones:', response.entityRecognition?.locations?.length || 0);",
+                  "console.log('🏢 Organizaciones:', response.entityRecognition?.organizations?.length || 0);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentType\": \"tweet\",\n  \"contentId\": \"{{$randomUUID}}\",\n  \"title\": \"Tweet de análisis político\",\n  \"content\": \"🚨 URGENTE: La @SEP_mx anuncia recorte del 30% al presupuesto educativo para 2025. Esto afectará a millones de estudiantes en México. Los maestros de #Oaxaca ya protestan en el Zócalo. El presidente @lopezobrador_ debe dar explicaciones inmediatas. #EducaciónEnCrisis #México\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ai-processing/analyze",
+              "host": ["{{base_url}}"],
+              "path": ["ai-processing", "analyze"]
+            },
+            "description": "Análisis de tweet con contenido político para probar detección de entidades, sentiment y riesgo"
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [
@@ -1362,6 +1731,11 @@
     },
     {
       "key": "last_news_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "last_analysis_id",
       "value": "",
       "type": "string"
     }
