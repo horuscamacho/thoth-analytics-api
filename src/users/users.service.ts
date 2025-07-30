@@ -101,8 +101,13 @@ export class UsersService {
     };
   }
 
-  async getUsers(tenantId: string, filters: IUserFilters = {}): Promise<IUser[]> {
-    const where: any = { tenantId };
+  async getUsers(tenantId: string | undefined, filters: IUserFilters = {}): Promise<IUser[]> {
+    const where: any = {};
+    
+    // Only filter by tenantId if provided (for SUPER_ADMIN, tenantId is undefined)
+    if (tenantId !== undefined) {
+      where.tenantId = tenantId;
+    }
 
     if (filters.status) {
       where.status = filters.status;

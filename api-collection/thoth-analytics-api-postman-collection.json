@@ -1,0 +1,1055 @@
+{
+  "info": {
+    "_postman_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "name": "Thoth Analytics API - Sprint 02",
+    "description": "Colección completa de endpoints para Thoth Analytics API con autenticación JWT, multi-tenancy y sistema de auditoría",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "12345678"
+  },
+  "item": [
+    {
+      "name": "🏥 Health",
+      "item": [
+        {
+          "name": "Welcome",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}",
+              "host": ["{{base_url}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Test de respuesta exitosa",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has correct structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "    pm.expect(jsonData).to.have.property('user');",
+                  "    pm.expect(jsonData.data).to.have.property('accessToken');",
+                  "    pm.expect(jsonData.data).to.have.property('refreshToken');",
+                  "});",
+                  "",
+                  "// 🎯 GUARDAR TOKENS AUTOMÁTICAMENTE",
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.accessToken) {",
+                  "    pm.collectionVariables.set(\"auth_token\", response.data.accessToken);",
+                  "    pm.collectionVariables.set(\"refresh_token\", response.data.refreshToken);",
+                  "    pm.collectionVariables.set(\"user_id\", response.user.id);",
+                  "    pm.collectionVariables.set(\"tenant_id\", response.user.tenantId);",
+                  "    pm.collectionVariables.set(\"user_role\", response.user.role);",
+                  "    ",
+                  "    console.log('✅ Tokens guardados automáticamente!');",
+                  "    console.log('👤 Usuario:', response.user.email);",
+                  "    console.log('🔑 Rol:', response.user.role);",
+                  "    console.log('🏢 Tenant:', response.user.tenantId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"superadmin@thoth.mx\",\n  \"password\": \"SuperAdmin2025!@#\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Endpoint de autenticación. Los tokens se guardan automáticamente en las variables de la colección."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// 🔄 ACTUALIZAR TOKENS AUTOMÁTICAMENTE",
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.accessToken) {",
+                  "    pm.collectionVariables.set(\"auth_token\", response.data.accessToken);",
+                  "    pm.collectionVariables.set(\"refresh_token\", response.data.refreshToken);",
+                  "    console.log('🔄 Tokens actualizados!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "refresh"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// 🚪 LIMPIAR TOKENS AUTOMÁTICAMENTE",
+                  "pm.collectionVariables.unset(\"auth_token\");",
+                  "pm.collectionVariables.unset(\"refresh_token\");",
+                  "pm.collectionVariables.unset(\"user_id\");",
+                  "pm.collectionVariables.unset(\"tenant_id\");",
+                  "pm.collectionVariables.unset(\"user_role\");",
+                  "console.log('🚪 Sesión cerrada y tokens eliminados');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👥 Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "disabled": true
+                },
+                {
+                  "key": "role",
+                  "value": "DIRECTOR_COMUNICACION",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nuevo.usuario@ejemplo.com\",\n  \"username\": \"nuevo_usuario\",\n  \"password\": \"Password123!@#\",\n  \"role\": \"ASISTENTE\",\n  \"tenantId\": \"{{tenant_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/:userId",
+              "host": ["{{base_url}}"],
+              "path": ["users", ":userId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "{{user_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Suspend User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Violación de políticas de uso\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/:userId/suspend",
+              "host": ["{{base_url}}"],
+              "path": ["users", ":userId", "suspend"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reactivate User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/:userId/reactivate",
+              "host": ["{{base_url}}"],
+              "path": ["users", ":userId", "reactivate"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirmation\": \"DELETE_USER_PERMANENTLY\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/:userId",
+              "host": ["{{base_url}}"],
+              "path": ["users", ":userId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "USER_ID_HERE"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Stats",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/stats",
+              "host": ["{{base_url}}"],
+              "path": ["users", "stats"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🏢 Tenants",
+      "item": [
+        {
+          "name": "List Tenants",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tenants",
+              "host": ["{{base_url}}"],
+              "path": ["tenants"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "GOVERNMENT_STATE",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Tenant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.id) {",
+                  "    pm.collectionVariables.set(\"last_tenant_id\", response.data.id);",
+                  "    console.log('🏢 Tenant creado:', response.data.name);",
+                  "    console.log('📍 ID:', response.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Gobierno del Estado de México\",\n  \"type\": \"GOVERNMENT_STATE\",\n  \"settings\": {\n    \"timezone\": \"America/Mexico_City\",\n    \"language\": \"es-MX\",\n    \"features\": {\n      \"aiAnalysis\": true,\n      \"alertSystem\": true,\n      \"newsMonitoring\": true,\n      \"tweetAnalysis\": true\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tenants",
+              "host": ["{{base_url}}"],
+              "path": ["tenants"]
+            },
+            "description": "Solo SUPER_ADMIN puede crear tenants"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tenant by ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tenants/:tenantId",
+              "host": ["{{base_url}}"],
+              "path": ["tenants", ":tenantId"],
+              "variable": [
+                {
+                  "key": "tenantId",
+                  "value": "{{last_tenant_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Tenant",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Gobierno del Estado de México - Actualizado\",\n  \"settings\": {\n    \"timezone\": \"America/Mexico_City\",\n    \"language\": \"es-MX\",\n    \"theme\": \"dark\",\n    \"features\": {\n      \"aiAnalysis\": true,\n      \"alertSystem\": true,\n      \"newsMonitoring\": true,\n      \"tweetAnalysis\": true,\n      \"clustering\": true\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tenants/:tenantId",
+              "host": ["{{base_url}}"],
+              "path": ["tenants", ":tenantId"],
+              "variable": [
+                {
+                  "key": "tenantId",
+                  "value": "{{last_tenant_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Suspend Tenant",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Falta de pago de licencia\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tenants/:tenantId/suspend",
+              "host": ["{{base_url}}"],
+              "path": ["tenants", ":tenantId", "suspend"],
+              "variable": [
+                {
+                  "key": "tenantId",
+                  "value": "{{last_tenant_id}}"
+                }
+              ]
+            },
+            "description": "Solo SUPER_ADMIN puede suspender tenants"
+          },
+          "response": []
+        },
+        {
+          "name": "Reactivate Tenant",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tenants/:tenantId/reactivate",
+              "host": ["{{base_url}}"],
+              "path": ["tenants", ":tenantId", "reactivate"],
+              "variable": [
+                {
+                  "key": "tenantId",
+                  "value": "{{last_tenant_id}}"
+                }
+              ]
+            },
+            "description": "Solo SUPER_ADMIN puede reactivar tenants"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Tenant",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"confirmation\": \"DELETE_TENANT_PERMANENTLY\",\n  \"reason\": \"Cierre definitivo de operaciones\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/tenants/:tenantId",
+              "host": ["{{base_url}}"],
+              "path": ["tenants", ":tenantId"],
+              "variable": [
+                {
+                  "key": "tenantId",
+                  "value": "{{last_tenant_id}}"
+                }
+              ]
+            },
+            "description": "Solo SUPER_ADMIN puede eliminar tenants. Requiere confirmación explícita."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tenant Stats",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tenants/:tenantId/stats",
+              "host": ["{{base_url}}"],
+              "path": ["tenants", ":tenantId", "stats"],
+              "variable": [
+                {
+                  "key": "tenantId",
+                  "value": "{{tenant_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📊 Audit",
+      "item": [
+        {
+          "name": "Get Audit Logs",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/audit/logs",
+              "host": ["{{base_url}}"],
+              "path": ["audit", "logs"],
+              "query": [
+                {
+                  "key": "action",
+                  "value": "LOGIN",
+                  "disabled": true
+                },
+                {
+                  "key": "entityType",
+                  "value": "USER",
+                  "disabled": true
+                },
+                {
+                  "key": "userId",
+                  "value": "{{user_id}}",
+                  "disabled": true
+                },
+                {
+                  "key": "startDate",
+                  "value": "2025-07-01",
+                  "disabled": true
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-07-31",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Audit Stats",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/audit/stats",
+              "host": ["{{base_url}}"],
+              "path": ["audit", "stats"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "week",
+                  "description": "day, week, month, year"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Audit Logs",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"format\": \"CSV\",\n  \"filters\": {\n    \"startDate\": \"2025-07-01\",\n    \"endDate\": \"2025-07-31\",\n    \"action\": \"LOGIN\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/audit/export",
+              "host": ["{{base_url}}"],
+              "path": ["audit", "export"]
+            },
+            "description": "Formatos disponibles: CSV, JSON, PDF"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Anomalies",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/audit/anomalies",
+              "host": ["{{base_url}}"],
+              "path": ["audit", "anomalies"],
+              "query": [
+                {
+                  "key": "threshold",
+                  "value": "10",
+                  "description": "Número de intentos para considerar anomalía"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check Integrity",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"logIds\": [\"log-id-1\", \"log-id-2\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/audit/integrity",
+              "host": ["{{base_url}}"],
+              "path": ["audit", "integrity"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Logs by Entity",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/audit/entity/:entityType/:entityId",
+              "host": ["{{base_url}}"],
+              "path": ["audit", "entity", ":entityType", ":entityId"],
+              "variable": [
+                {
+                  "key": "entityType",
+                  "value": "USER"
+                },
+                {
+                  "key": "entityId",
+                  "value": "{{user_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Activity",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/audit/users/:userId/activity",
+              "host": ["{{base_url}}"],
+              "path": ["audit", "users", ":userId", "activity"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "{{user_id}}"
+                }
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30",
+                  "description": "Últimos N días de actividad"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tenant_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_role",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "last_tenant_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

@@ -67,7 +67,7 @@ export class UsersController {
   }
 
   @Get()
-  @ROLES('DIRECTOR_COMUNICACION', 'LIDER')
+  @ROLES('SUPER_ADMIN', 'DIRECTOR_COMUNICACION', 'LIDER')
   async getUsers(
     @CURRENT_USER() currentUser: ICurrentUser,
     @Query('status') status?: string,
@@ -89,7 +89,9 @@ export class UsersController {
     if (status) filters.status = status;
     if (role) filters.role = role;
     
-    const users = await this.usersService.getUsers(currentUser.tenantId, filters);
+    // SUPER_ADMIN can see all users from all tenants
+    const tenantId = currentUser.role === 'SUPER_ADMIN' ? undefined : currentUser.tenantId;
+    const users = await this.usersService.getUsers(tenantId, filters);
 
     return {
       message: 'Users retrieved successfully',

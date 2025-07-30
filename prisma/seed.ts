@@ -10,9 +10,9 @@ async function main(): Promise<void> {
   // Create Super Admin user
   const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'superadmin@thoth.mx';
   const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'SuperAdmin2025!@#';
-  
+
   console.log(`📧 Creating Super Admin with email: ${superAdminEmail}`);
-  
+
   const hashedPassword = await bcrypt.hash(superAdminPassword, 12);
 
   const superAdmin = await prisma.user.upsert({
@@ -32,7 +32,6 @@ async function main(): Promise<void> {
       role: 'SUPER_ADMIN',
       status: 'ACTIVE',
       tenantId: null, // Super admin doesn't belong to any tenant
-      isTemporaryPassword: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -93,7 +92,6 @@ async function main(): Promise<void> {
       role: 'DIRECTOR_COMUNICACION',
       status: 'ACTIVE',
       tenantId: sampleTenant.id,
-      isTemporaryPassword: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -122,7 +120,6 @@ async function main(): Promise<void> {
       role: 'LIDER',
       status: 'ACTIVE',
       tenantId: sampleTenant.id,
-      isTemporaryPassword: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -134,7 +131,9 @@ async function main(): Promise<void> {
   console.log('');
   console.log('🔑 Login credentials:');
   console.log(`Super Admin: ${superAdminEmail} / ${superAdminPassword}`);
-  console.log(`Director de Comunicación: director.comunicacion@hidalgo.gob.mx / ${directorPassword}`);
+  console.log(
+    `Director de Comunicación: director.comunicacion@hidalgo.gob.mx / ${directorPassword}`,
+  );
   console.log(`Gobernador: gobernador@hidalgo.gob.mx / ${gobernadorPassword}`);
   console.log('');
   console.log('🏢 Sample tenant created:');

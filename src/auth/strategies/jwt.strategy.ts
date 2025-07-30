@@ -49,20 +49,23 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User account is not active');
     }
 
-    if (user.tenantId !== payload.tenantId) {
+    // For super admin, allow system tenant
+    if (user.role !== 'SUPER_ADMIN' && user.tenantId !== payload.tenantId) {
       throw new UnauthorizedException('Tenant mismatch');
     }
 
-    // Validate tenant header matches user's tenant
-    const tenantHeader = request.headers['x-tenant-id'];
-    const requestTenantId = Array.isArray(tenantHeader) ? tenantHeader[0] : tenantHeader;
+    // Validate tenant header matches user's tenant (skip for super admin)
+    if (user.role !== 'SUPER_ADMIN') {
+      const tenantHeader = request.headers['x-tenant-id'];
+      const requestTenantId = Array.isArray(tenantHeader) ? tenantHeader[0] : tenantHeader;
 
-    if (
-      typeof requestTenantId === 'string' &&
-      requestTenantId.trim() !== '' &&
-      user.tenantId !== requestTenantId
-    ) {
-      throw new UnauthorizedException('Tenant header mismatch');
+      if (
+        typeof requestTenantId === 'string' &&
+        requestTenantId.trim() !== '' &&
+        user.tenantId !== requestTenantId
+      ) {
+        throw new UnauthorizedException('Tenant header mismatch');
+      }
     }
 
     return {
@@ -70,7 +73,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: user.email,
       username: user.username,
       role: user.role,
-      tenantId: user.tenantId,
+      tenantId: user.tenantId || 'system', // For super admin, use 'system'
     };
   }
 }
