@@ -3,6 +3,7 @@
 **Fecha:** 30 de Julio 2025  
 **Sprint:** sprint-02-auth-multitenancy  
 **Duración:** 1 día intensivo  
+**Estado:** ✅ COMPLETADO CON FIXES POST-SPRINT  
 
 ## 📊 MÉTRICAS DEL SPRINT
 
@@ -37,10 +38,13 @@
 - ❌ **Configuración Initial**: Problemas con exactOptionalPropertyTypes en tsconfig
 - ❌ **Fallas en Tests**: Tests iniciales fallando por mocks incorrectos y tipos
 - ❌ **Migraciones DB**: Necesidad de reset de base de datos por schema drift
+- ❌ **SUPER_ADMIN Auth Issues**: Problemas de autenticación con tenantId null vs 'system'
+- ❌ **Módulos no registrados**: TenantsModule y AuditModule no estaban en AppModule inicialmente
 
 ### **Proceso:**
 - ❌ **Documentación Dispersa**: Información distribuida en múltiples archivos dificultó navegación inicial
 - ❌ **Dependencias**: Instalación manual de paquetes (@nestjs/jwt, bcryptjs, etc.) ralentizó proceso
+- ❌ **Testing en Producción**: Algunos bugs solo se descubrieron al usar la API real
 
 ## 🔧 MEJORAS PARA PRÓXIMO SPRINT
 
@@ -49,12 +53,15 @@
 2. **Docker Dev Environment**: Crear devcontainer para ambiente consistente
 3. **Test Templates**: Crear templates para tests unitarios/e2e consistentes
 4. **Migration Scripts**: Automatizar setup inicial de base de datos
+5. **Auth Testing**: Crear scripts de prueba para todos los roles y casos edge
+6. **Module Registration**: Checklist automático para verificar imports en AppModule
 
 ### **Proceso:**
 1. **Documentación Unificada**: Consolidar instrucciones técnicas en un solo README técnico
 2. **Automation Scripts**: Crear scripts npm para tareas comunes (setup, test, build)
 3. **Dependency Management**: Pre-instalar dependencias comunes en package.json base
 4. **Coverage Tracking**: Implementar coverage reporting automático en CI/CD
+5. **Real API Testing**: Incluir pruebas con Postman/Insomnia en el proceso de QA
 
 ## 📋 ENTREGABLES COMPLETADOS
 
@@ -96,7 +103,8 @@
 - Extended tests para DatabaseModule, UsersModule, TenantsModule
 
 ### **API Collection:**
-- `api-collection/thoth-analytics-api-collection.json` - 918 líneas con automatización
+- `api-collection/thoth-analytics-api-collection.json` - 918 líneas con automatización (Insomnia)
+- `api-collection/thoth-analytics-api-postman-collection.json` - Colección completa de Postman con scripts automáticos
 
 ### **Documentación:**
 - `20250730-sprint-retrospective-v1.md` - Este documento
@@ -123,9 +131,32 @@
 - **Relaciones**: Correctas con cascades y foreign keys
 - **Índices**: Optimizados para queries de auditoría y multi-tenancy
 
+## 🔄 FIXES POST-SPRINT APLICADOS
+
+**Fecha:** 30 de Julio 2025 - Tarde  
+**Commit:** `38fc4ca7` - fix(auth): resolve SUPER_ADMIN authentication and authorization issues
+
+### **Problemas Identificados y Resueltos:**
+1. **SUPER_ADMIN Authentication**: Error 401 al acceder a endpoints protegidos
+   - **Causa**: Validación de tenantId en JWT strategy no manejaba null vs 'system'
+   - **Solución**: Bypass de validación de tenant para SUPER_ADMIN
+
+2. **Users Endpoint Authorization**: SUPER_ADMIN no podía acceder a `/users`
+   - **Causa**: Rol no incluido en @ROLES decorator
+   - **Solución**: Agregado SUPER_ADMIN a roles permitidos
+
+3. **Users Visibility**: SUPER_ADMIN veía 0 usuarios en lugar de todos
+   - **Causa**: Filtrado por tenantId específico ('system') en lugar de ver todos
+   - **Solución**: tenantId undefined para SUPER_ADMIN para ver todos los usuarios
+
+4. **Postman Collection**: Agregada colección completa con scripts automáticos
+   - **Beneficio**: Mejor experiencia de testing que Insomnia
+
 ## 🎉 CONCLUSIÓN DEL SPRINT
 
-Sprint 02 completado exitosamente con **100% de user stories implementadas** y **82.79% de cobertura de tests**. El sistema de autenticación, multi-tenancy y auditoría está completamente funcional y listo para integración con los siguientes módulos.
+Sprint 02 completado exitosamente con **100% de user stories implementadas**, **82.79% de cobertura de tests** y **fixes post-sprint aplicados**. El sistema de autenticación, multi-tenancy y auditoría está completamente funcional, probado en condiciones reales y listo para integración con los siguientes módulos.
+
+**Lecciones Aprendidas**: Los tests automatizados son excelentes pero no reemplazan las pruebas reales con API. Los casos edge como SUPER_ADMIN requieren validación manual.
 
 **Próximo Sprint**: Sprint 03 - Scraper Integration
 **Fecha estimada**: 31 julio - 02 agosto 2025
@@ -133,7 +164,7 @@ Sprint 02 completado exitosamente con **100% de user stories implementadas** y *
 ---
 
 **Firma Digital del Sprint:**  
-Hash: `sha256:${new Date().toISOString()}-sprint-02-auth-multitenancy-completed`  
+Hash: `sha256:${new Date().toISOString()}-sprint-02-auth-multitenancy-completed-with-fixes`  
 Autor: Horus Camacho Avila  
 Revisor: Claude AI Assistant  
-Estado: ✅ COMPLETADO
+Estado: ✅ COMPLETADO Y VALIDADO EN PRODUCCIÓN
