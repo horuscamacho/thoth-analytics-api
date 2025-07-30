@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-    "name": "Thoth Analytics API - Sprint 02",
-    "description": "Colección completa de endpoints para Thoth Analytics API con autenticación JWT, multi-tenancy y sistema de auditoría",
+    "name": "Thoth Analytics API - Sprint 03",
+    "description": "Colección completa de endpoints para Thoth Analytics API con autenticación JWT, multi-tenancy, sistema de auditoría y scraper integration",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "12345678"
   },
@@ -997,6 +997,305 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "🔧 Scrapers",
+      "item": [
+        {
+          "name": "Create Tweet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has correct structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData).to.have.property('success');",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data).to.have.property('tweetId');",
+                  "    pm.expect(jsonData.data).to.have.property('contentHash');",
+                  "    pm.expect(jsonData.data).to.have.property('isDuplicate');",
+                  "});",
+                  "",
+                  "// Save tweet ID for further requests",
+                  "const response = pm.response.json();",
+                  "if (response.success && response.data && response.data.id) {",
+                  "    pm.collectionVariables.set(\"last_tweet_id\", response.data.id);",
+                  "    pm.collectionVariables.set(\"last_tweet_content_hash\", response.data.contentHash);",
+                  "    console.log('🐦 Tweet creado:', response.data.tweetId);",
+                  "    console.log('🆔 ID:', response.data.id);",
+                  "    console.log('🔗 Hash:', response.data.contentHash);",
+                  "    if (response.data.isDuplicate) {",
+                  "        console.log('⚠️ Tweet duplicado detectado');",
+                  "    } else {",
+                  "        console.log('✅ Tweet nuevo procesado');",
+                  "        if (response.data.aiJobId) {",
+                  "            console.log('🤖 Job IA creado:', response.data.aiJobId);",
+                  "        }",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tweetId\": \"1234567890123456789\",\n  \"mediaSourceId\": \"media-source-1\",\n  \"authorName\": \"Usuario Ejemplo\",\n  \"authorHandle\": \"@usuario_ejemplo\",\n  \"content\": \"Este es un tweet de ejemplo para probar el endpoint de scrapers #test #ejemplo\",\n  \"publishedAt\": \"2025-07-30T15:30:00.000Z\",\n  \"hashtags\": [\"#test\", \"#ejemplo\", \"#scrapers\"],\n  \"mentions\": [\"@thoth_analytics\", \"@gobierno_mx\"],\n  \"mediaUrls\": [\n    {\n      \"url\": \"https://pbs.twimg.com/media/example.jpg\",\n      \"type\": \"photo\",\n      \"thumbnailUrl\": \"https://pbs.twimg.com/media/example_thumb.jpg\"\n    }\n  ],\n  \"engagement\": {\n    \"retweetCount\": 15,\n    \"likeCount\": 42,\n    \"replyCount\": 8,\n    \"quoteCount\": 3\n  },\n  \"tenantId\": \"{{tenant_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/scrapers/tweets",
+              "host": ["{{base_url}}"],
+              "path": ["scrapers", "tweets"]
+            },
+            "description": "Endpoint para que el scraper Python envíe tweets capturados. Detecta duplicados automáticamente y crea jobs de IA."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Tweet (Duplicate Test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tweetId\": \"1234567890123456789\",\n  \"mediaSourceId\": \"media-source-1\",\n  \"authorName\": \"Usuario Ejemplo\",\n  \"authorHandle\": \"@usuario_ejemplo\",\n  \"content\": \"Este es un tweet de ejemplo para probar el endpoint de scrapers #test #ejemplo\",\n  \"publishedAt\": \"2025-07-30T15:30:00.000Z\",\n  \"hashtags\": [\"#test\", \"#ejemplo\", \"#scrapers\"],\n  \"mentions\": [\"@thoth_analytics\", \"@gobierno_mx\"],\n  \"tenantId\": \"{{tenant_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/scrapers/tweets",
+              "host": ["{{base_url}}"],
+              "path": ["scrapers", "tweets"]
+            },
+            "description": "Mismo tweet para probar detección de duplicados. Debe retornar isDuplicate: true"
+          },
+          "response": []
+        },
+        {
+          "name": "Create News",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has correct structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData).to.have.property('success');",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data).to.have.property('tweetId');",
+                  "    pm.expect(jsonData.data).to.have.property('contentHash');",
+                  "});",
+                  "",
+                  "// Save news ID",
+                  "const response = pm.response.json();",
+                  "if (response.success && response.data && response.data.id) {",
+                  "    pm.collectionVariables.set(\"last_news_id\", response.data.id);",
+                  "    console.log('📰 Noticia creada:', response.data.id);",
+                  "    if (response.data.isDuplicate) {",
+                  "        console.log('⚠️ Noticia duplicada detectada');",
+                  "    } else {",
+                  "        console.log('✅ Noticia nueva procesada');",
+                  "        if (response.data.aiJobId) {",
+                  "            console.log('🤖 Job IA creado:', response.data.aiJobId);",
+                  "        }",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tweetId\": \"{{last_tweet_id}}\",\n  \"mediaSourceId\": \"media-source-1\",\n  \"title\": \"Gobierno Anuncia Nuevas Políticas de Transparencia\",\n  \"content\": \"El gobierno federal anunció hoy una serie de nuevas políticas destinadas a mejorar la transparencia en las instituciones públicas. Las medidas incluyen la publicación de datos en tiempo real sobre el uso de recursos públicos y la implementación de sistemas de seguimiento ciudadano. Esta iniciativa forma parte de un esfuerzo más amplio para combatir la corrupción y fortalecer la confianza pública en las instituciones gubernamentales.\",\n  \"url\": \"https://ejemplo.gob.mx/noticias/nuevas-politicas-transparencia-2025\",\n  \"extractedAt\": \"2025-07-30T15:35:00.000Z\",\n  \"tenantId\": \"{{tenant_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/scrapers/news",
+              "host": ["{{base_url}}"],
+              "path": ["scrapers", "news"]
+            },
+            "description": "Endpoint para que el extractor Python envíe noticias extraídas de URLs. Requiere que el tweet asociado exista."
+          },
+          "response": []
+        },
+        {
+          "name": "Scrapers Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Health check structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "    pm.expect(jsonData).to.have.property('timestamp');",
+                  "    pm.expect(jsonData).to.have.property('uptime');",
+                  "    pm.expect(jsonData).to.have.property('version');",
+                  "    pm.expect(jsonData).to.have.property('services');",
+                  "    pm.expect(jsonData.services).to.have.property('database');",
+                  "    pm.expect(jsonData).to.have.property('responseTime');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('🏥 Estado del servicio:', response.status);",
+                  "console.log('⏱️ Tiempo de respuesta:', response.responseTime + 'ms');",
+                  "console.log('⏰ Uptime:', Math.floor(response.uptime / 60) + ' minutos');",
+                  "console.log('💾 Base de datos:', response.services.database);",
+                  "",
+                  "if (response.status === 'healthy') {",
+                  "    console.log('✅ Servicio de scrapers operativo');",
+                  "} else {",
+                  "    console.log('⚠️ Problemas detectados en el servicio');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/scrapers/health",
+              "host": ["{{base_url}}"],
+              "path": ["scrapers", "health"]
+            },
+            "description": "Verificar estado del servicio de scrapers y conexiones a base de datos. No requiere autenticación."
+          },
+          "response": []
+        },
+        {
+          "name": "Scrapers Statistics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Stats structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "    pm.expect(jsonData.data).to.have.property('tweetsReceived');",
+                  "    pm.expect(jsonData.data).to.have.property('newsReceived');",
+                  "    pm.expect(jsonData.data).to.have.property('duplicatesBlocked');",
+                  "    pm.expect(jsonData.data).to.have.property('aiJobsCreated');",
+                  "    pm.expect(jsonData.data).to.have.property('avgResponseTime');",
+                  "    pm.expect(jsonData.data).to.have.property('uptime');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('📊 ESTADÍSTICAS DE SCRAPERS:');",
+                  "console.log('🐦 Tweets recibidos:', response.data.tweetsReceived);",
+                  "console.log('📰 Noticias recibidas:', response.data.newsReceived);",
+                  "console.log('🚫 Duplicados bloqueados:', response.data.duplicatesBlocked);",
+                  "console.log('🤖 Jobs IA creados:', response.data.aiJobsCreated);",
+                  "console.log('⚡ Tiempo promedio:', response.data.avgResponseTime + 'ms');",
+                  "console.log('⏰ Uptime:', Math.floor(response.data.uptime / 60) + ' minutos');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/scrapers/stats",
+              "host": ["{{base_url}}"],
+              "path": ["scrapers", "stats"]
+            },
+            "description": "Obtener estadísticas del servicio de scrapers: tweets/noticias procesadas, duplicados, performance, etc."
+          },
+          "response": []
+        },
+        {
+          "name": "Test Throttling (High Volume)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Este test puede devolver 429 si el throttling está habilitado",
+                  "if (pm.response.code === 429) {",
+                  "    pm.test(\"Throttling working - Rate limit exceeded\", function () {",
+                  "        pm.response.to.have.status(429);",
+                  "    });",
+                  "    console.log('🚦 Rate limiting está funcionando correctamente');",
+                  "    console.log('⚠️ Demasiadas requests - throttling activado');",
+                  "} else if (pm.response.code === 201) {",
+                  "    pm.test(\"Request successful - Within rate limits\", function () {",
+                  "        pm.response.to.have.status(201);",
+                  "    });",
+                  "    console.log('✅ Request dentro de los límites de throttling');",
+                  "} else {",
+                  "    pm.test(\"Unexpected response\", function () {",
+                  "        pm.expect.fail('Status code: ' + pm.response.code);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tweetId\": \"{{$randomInt}}\",\n  \"mediaSourceId\": \"media-source-test\",\n  \"authorName\": \"Test Throttling\",\n  \"authorHandle\": \"@test_throttling\",\n  \"content\": \"Tweet para probar throttling - {{$timestamp}}\",\n  \"publishedAt\": \"{{$isoTimestamp}}\",\n  \"tenantId\": \"test-tenant-throttling\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/scrapers/tweets",
+              "host": ["{{base_url}}"],
+              "path": ["scrapers", "tweets"]
+            },
+            "description": "Request para probar throttling. Ejecutar múltiples veces rápido para verificar rate limiting. Configurar THROTTLING_ENABLED=true en .env"
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [
@@ -1048,6 +1347,21 @@
     },
     {
       "key": "last_tenant_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "last_tweet_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "last_tweet_content_hash",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "last_news_id",
       "value": "",
       "type": "string"
     }

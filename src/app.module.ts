@@ -13,6 +13,7 @@ import { AlertsModule } from './alerts/alerts.module';
 import { CommonModule } from './common/common.module';
 import { ConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
+import { ScrapersModule } from './scrapers/scrapers.module';
 import redisConfig from './config/redis.config';
 
 @Module({
@@ -42,6 +43,7 @@ import redisConfig from './config/redis.config';
     AlertsModule,
     CommonModule,
     ConfigModule,
+    ScrapersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

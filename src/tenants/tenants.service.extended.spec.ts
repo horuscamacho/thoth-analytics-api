@@ -460,141 +460,107 @@ describe('TenantsService - Extended Tests', () => {
     });
   });
 
-  describe('toggleTenantStatus', () => {
-    it('should activate inactive tenant', async () => {
-      const inactiveTenant = { ...mockTenant, isActive: false };
-      const activatedTenant = { ...inactiveTenant, isActive: true };
-      
-      mockPrismaService.tenant.findUnique.mockResolvedValue(inactiveTenant);
-      mockPrismaService.tenant.update.mockResolvedValue(activatedTenant);
+  // toggleTenantStatus method doesn't exist in service - removing tests
 
-      const result = await service.toggleTenantStatus('tenant-123', 'admin-456');
-
-      expect(result).toEqual(activatedTenant);
-      expect(mockPrismaService.tenant.update).toHaveBeenCalledWith({
-        where: { id: 'tenant-123' },
-        data: {
-          isActive: true,
-          updatedAt: expect.any(Date),
-        },
-        include: { users: true },
-      });
-      expect(auditService.logAction).toHaveBeenCalledWith(
-        'tenant-123',
-        'admin-456',
-        AuditAction.TENANT_STATUS_CHANGED,
-        AuditEntityType.TENANT,
-        'tenant-123',
-        expect.any(Object),
-        expect.any(Object),
-        expect.any(Object)
-      );
-    });
-
-    it('should deactivate active tenant', async () => {
-      const activeTenant = { ...mockTenant, isActive: true };
-      const deactivatedTenant = { ...activeTenant, isActive: false };
-      
-      mockPrismaService.tenant.findUnique.mockResolvedValue(activeTenant);
-      mockPrismaService.tenant.update.mockResolvedValue(deactivatedTenant);
-
-      const result = await service.toggleTenantStatus('tenant-123', 'admin-456');
-
-      expect(result).toEqual(deactivatedTenant);
-      expect(mockPrismaService.tenant.update).toHaveBeenCalledWith({
-        where: { id: 'tenant-123' },
-        data: {
-          isActive: false,
-          updatedAt: expect.any(Date),
-        },
-        include: { users: true },
-      });
-    });
-
-    it('should throw NotFoundException if tenant not found', async () => {
-      mockPrismaService.tenant.findUnique.mockResolvedValue(null);
-
-      await expect(
-        service.toggleTenantStatus('tenant-123', 'admin-456')
-      ).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  describe('validateTenantExists', () => {
-    it('should return true if tenant exists', async () => {
-      mockPrismaService.tenant.findFirst.mockResolvedValue({ id: 'tenant-123' });
-
-      const result = await service.validateTenantExists('tenant-123');
-
-      expect(result).toBe(true);
-      expect(mockPrismaService.tenant.findFirst).toHaveBeenCalledWith({
-        where: { id: 'tenant-123' },
-        select: { id: true },
-      });
-    });
-
-    it('should return false if tenant does not exist', async () => {
-      mockPrismaService.tenant.findFirst.mockResolvedValue(null);
-
-      const result = await service.validateTenantExists('tenant-123');
-
-      expect(result).toBe(false);
-    });
-  });
+  // validateTenantExists method doesn't exist in service - removing tests
 
   describe('getTenantStats', () => {
     it('should return tenant statistics', async () => {
-      const totalCount = 10;
-      const activeCount = 8;
+      // Mock getTenantById to not throw
+      mockPrismaService.tenant.findUnique.mockResolvedValue(mockTenant);
       
-      mockPrismaService.tenant.count
-        .mockResolvedValueOnce(totalCount)
-        .mockResolvedValueOnce(activeCount);
+      // Mock user statistics
+      mockPrismaService.user.groupBy.mockResolvedValue([
+        { status: 'ACTIVE', role: 'DIRECTOR', _count: 2 },
+        { status: 'ACTIVE', role: 'EMPLOYEE', _count: 3 }
+      ]);
+      mockPrismaService.user.count
+        .mockResolvedValueOnce(5) // totalUsers
+        .mockResolvedValueOnce(5) // activeUsers  
+        .mockResolvedValueOnce(0); // suspendedUsers
+      
+      // Mock content counts
+      mockPrismaService.tweet.count.mockResolvedValue(10);
+      mockPrismaService.news.count.mockResolvedValue(5);
+      mockPrismaService.alert.count
+        .mockResolvedValueOnce(3) // total alerts
+        .mockResolvedValueOnce(1); // unread alerts
+      mockPrismaService.alert.groupBy.mockResolvedValue([
+        { severity: 'HIGH', _count: 2 },
+        { severity: 'MEDIUM', _count: 1 }
+      ]);
 
-      const result = await service.getTenantStats();
+      const result = await service.getTenantStats('tenant-123');
 
-      expect(result).toEqual({
-        total: totalCount,
-        active: activeCount,
-        inactive: 2,
-      });
-      expect(mockPrismaService.tenant.count).toHaveBeenCalledTimes(2);
-      expect(mockPrismaService.tenant.count).toHaveBeenNthCalledWith(1, {});
-      expect(mockPrismaService.tenant.count).toHaveBeenNthCalledWith(2, {
-        where: { isActive: true },
-      });
+      expect(result).toHaveProperty('users');
+      expect(result).toHaveProperty('content');
+      expect(result).toHaveProperty('alerts');
+      expect(result.users.total).toBe(5);
+      expect(result.content.tweets).toBe(10);
+      expect(result.content.news).toBe(5);
     });
 
     it('should handle zero counts', async () => {
-      mockPrismaService.tenant.count
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(0);
+      // Mock getTenantById to not throw
+      mockPrismaService.tenant.findUnique.mockResolvedValue(mockTenant);
+      
+      // Mock empty statistics
+      mockPrismaService.user.groupBy.mockResolvedValue([]);
+      mockPrismaService.user.count
+        .mockResolvedValueOnce(0) // totalUsers
+        .mockResolvedValueOnce(0) // activeUsers  
+        .mockResolvedValueOnce(0); // suspendedUsers
+      
+      // Mock content counts
+      mockPrismaService.tweet.count.mockResolvedValue(0);
+      mockPrismaService.news.count.mockResolvedValue(0);
+      mockPrismaService.alert.count
+        .mockResolvedValueOnce(0) // total alerts
+        .mockResolvedValueOnce(0); // unread alerts
+      mockPrismaService.alert.groupBy.mockResolvedValue([]);
 
-      const result = await service.getTenantStats();
+      const result = await service.getTenantStats('tenant-123');
 
-      expect(result).toEqual({
-        total: 0,
-        active: 0,
-        inactive: 0,
-      });
+      expect(result.users.total).toBe(0);
+      expect(result.content.tweets).toBe(0);
+      expect(result.content.news).toBe(0);
+      expect(result.alerts.total).toBe(0);
     });
 
     it('should handle all active tenants', async () => {
-      mockPrismaService.tenant.count
-        .mockResolvedValueOnce(5)
-        .mockResolvedValueOnce(5);
+      // Mock getTenantById to not throw
+      mockPrismaService.tenant.findUnique.mockResolvedValue(mockTenant);
+      
+      // Mock all active users
+      mockPrismaService.user.groupBy.mockResolvedValue([
+        { status: 'ACTIVE', role: 'DIRECTOR', _count: 5 }
+      ]);
+      mockPrismaService.user.count
+        .mockResolvedValueOnce(5) // totalUsers
+        .mockResolvedValueOnce(5) // activeUsers  
+        .mockResolvedValueOnce(0); // suspendedUsers
+      
+      // Mock content counts
+      mockPrismaService.tweet.count.mockResolvedValue(20);
+      mockPrismaService.news.count.mockResolvedValue(10);
+      mockPrismaService.alert.count
+        .mockResolvedValueOnce(5) // total alerts
+        .mockResolvedValueOnce(2); // unread alerts
+      mockPrismaService.alert.groupBy.mockResolvedValue([
+        { severity: 'HIGH', _count: 5 }
+      ]);
 
-      const result = await service.getTenantStats();
+      const result = await service.getTenantStats('tenant-123');
 
-      expect(result).toEqual({
-        total: 5,
-        active: 5,
-        inactive: 0,
-      });
+      expect(result.users.total).toBe(5);
+      expect(result.users.active).toBe(5);
+      expect(result.users.suspended).toBe(0);
     });
   });
 
   describe('private methods', () => {
+    // generateTenantId method doesn't exist - removing tests
+    /*
     describe('generateTenantId', () => {
       it('should generate unique tenant IDs', () => {
         const id1 = (service as any).generateTenantId();
@@ -618,5 +584,6 @@ describe('TenantsService - Extended Tests', () => {
         expect(id).toMatch(/^tenant_[a-z0-9]{12}$/);
       });
     });
+    */
   });
 });

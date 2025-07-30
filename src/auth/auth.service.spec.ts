@@ -186,7 +186,9 @@ describe('AuthService', () => {
 
       const prismaServiceMock = {
         user: {
-          findFirst: jest.fn().mockResolvedValue(mockUser),
+          findFirst: jest.fn()
+            .mockResolvedValueOnce(null) // First call for super admin check returns null
+            .mockResolvedValueOnce(mockUser), // Second call returns the user
         },
       };
       (service as any).prismaService = prismaServiceMock;
@@ -194,7 +196,12 @@ describe('AuthService', () => {
 
       const result = await service.validateUser(email, password, tenantId);
 
-      expect(prismaServiceMock.user.findFirst).toHaveBeenCalledWith({
+      // Should be called twice: once for super admin check, once for regular user
+      expect(prismaServiceMock.user.findFirst).toHaveBeenCalledTimes(2);
+      expect(prismaServiceMock.user.findFirst).toHaveBeenNthCalledWith(1, {
+        where: { email, role: 'SUPER_ADMIN', status: 'ACTIVE' },
+      });
+      expect(prismaServiceMock.user.findFirst).toHaveBeenNthCalledWith(2, {
         where: {
           email,
           tenantId,
