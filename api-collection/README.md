@@ -100,16 +100,20 @@ insomnia.request.setHeader('X-Tenant-ID', tenantId);
 
 ```
 📁 Thoth Analytics API
-├── 📁 Auth & Security
+├── 📁 Auth & Security (✅ IMPLEMENTADO)
 │   ├── 🔐 Login
-│   ├── 🔐 Refresh Token
-│   ├── 🔐 Logout
-│   └── 🔐 Change Password
+│   ├── 🔄 Refresh Token
+│   ├── 🚪 Logout
+│   ├── 👤 Get Profile
+│   ├── 🔒 Admin Only Endpoint
+│   └── 🏢 Management Only Endpoint
 │
-├── 📁 Health Checks
-│   ├── ✅ API Health
-│   ├── ✅ Database Health
-│   └── ✅ Full System Health
+├── 📁 Health Checks (✅ IMPLEMENTADO)
+│   ├── 🏠 Welcome Message
+│   ├── ✅ API Health Check
+│   ├── 🗄️ Database Health Check
+│   ├── 🔴 Redis Health Check
+│   └── 🏥 Full System Health Check
 │
 ├── 📁 Users Management
 │   ├── 👤 Get Users
@@ -240,15 +244,22 @@ git commit -m "feat(api): update Insomnia collection with new endpoints"
 
 ## 📝 DOCUMENTACIÓN POR MÓDULO
 
-### **Health Checks (Actual):**
+### **Health Checks (Implementado):**
 - ✅ `GET /` - Mensaje de bienvenida
 - ✅ `GET /health` - Health check básico de la API
 - ✅ `GET /health/db` - Health check de PostgreSQL con Prisma (incluye versión)
-- ✅ `GET /health/redis` - Health check de Redis cache
+- ✅ `GET /health/redis` - Health check de Redis cache  
 - ✅ `GET /health/full` - Health check completo del sistema (API + DB + Redis)
 
+### **Auth & Security (Implementado):**
+- ✅ `POST /auth/login` - Autenticación con email, password y tenant ID
+- ✅ `POST /auth/refresh` - Renovación de tokens con refresh token
+- ✅ `POST /auth/logout` - Cierre de sesión (requiere autenticación)
+- ✅ `GET /auth/profile` - Información del perfil del usuario autenticado
+- ✅ `GET /auth/admin-only` - Endpoint exclusivo para rol DIRECTOR
+- ✅ `GET /auth/management-only` - Endpoint para roles DIRECTOR, GOBERNADOR, SECRETARIO
+
 ### **Por Implementar:**
-- 🔐 **Auth Module** - Login, refresh, logout
 - 👤 **Users Module** - CRUD de usuarios
 - 🐦 **Tweets Module** - Procesamiento de tweets
 - 📰 **News Module** - Extracción y análisis de noticias

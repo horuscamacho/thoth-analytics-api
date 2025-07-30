@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2025-07-29T00:00:00.000Z",
+  "__export_date": "2025-07-30T05:00:00.000Z",
   "__export_source": "insomnia.desktop.app:v2023.5.8",
   "resources": [
     {
@@ -66,30 +66,33 @@
       "tests": [
         {
           "name": "Health Check Validation",
-          "code": "const response = await insomnia.send();\nconst data = JSON.parse(response.body);\n\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('status', 'ok');\nexpect(data).to.have.property('service', 'thoth-analytics-api');\nexpect(data).to.have.property('timestamp');"
+          "code": "const response = await insomnia.send();\nconst data = JSON.parse(response.body);\n\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('status', 'ok');\nexpected(data).to.have.property('service', 'thoth-analytics-api');\nexpect(data).to.have.property('timestamp');"
         }
       ]
     },
     {
-      "_id": "req_health_db",
-      "parentId": "fld_health",
-      "modified": 1690675200000,
-      "created": 1690675200000,
+      "_id": "req_auth_login",
+      "parentId": "fld_auth",
+      "modified": 1690675300000,
+      "created": 1690675300000,
       "_type": "request",
-      "url": "{{ _.base_url }}/health/db",
-      "name": "🗄️ Database Health Check",
-      "description": "Health check de la base de datos PostgreSQL con Prisma - verifica conectividad y versión",
-      "method": "GET",
-      "body": {},
+      "url": "{{ _.base_url }}/auth/login",
+      "name": "🔐 Login",
+      "description": "Autenticación de usuario con email, password y tenant ID. Retorna access token y refresh token.",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"admin@demo.com\",\n  \"password\": \"TempPass123!\",\n  \"tenantId\": \"tenant-demo\"\n}"
+      },
       "parameters": [],
       "headers": [
         {
-          "name": "Accept",
+          "name": "Content-Type",
           "value": "application/json"
         }
       ],
       "authentication": {},
-      "metaSortKey": -1690675000000,
+      "metaSortKey": -1690675300000,
       "isPrivate": false,
       "settingStoreCookies": true,
       "settingSendCookies": true,
@@ -98,31 +101,34 @@
       "settingRebuildPath": true,
       "tests": [
         {
-          "name": "Database Connection Test",
-          "code": "const response = await insomnia.send();\nconst data = JSON.parse(response.body);\n\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('status', 'connected');\nexpect(data).to.have.property('database', 'postgresql');\nexpect(data).to.have.property('timestamp');\nexpect(data).to.have.property('version');"
+          "name": "Login Success and Token Extraction",
+          "code": "const response = await insomnia.send();\nconst data = JSON.parse(response.body);\n\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('message', 'Login successful');\nexpect(data).to.have.property('data');\nexpect(data.data).to.have.property('accessToken');\nexpect(data.data).to.have.property('refreshToken');\nexpect(data).to.have.property('user');\nexpect(data.user).to.have.property('email');\nexpect(data.user).to.have.property('role');\n\n// ✨ AUTO-SAVE TOKENS TO ENVIRONMENT\nif (data.data.accessToken) {\n  insomnia.environment.auth_token = data.data.accessToken;\n  insomnia.environment.refresh_token = data.data.refreshToken;\n  insomnia.environment.user_id = data.user.id;\n  insomnia.environment.tenant_id = data.user.tenantId;\n  insomnia.environment.user_role = data.user.role;\n  console.log('🎯 Tokens automatically saved to environment!');\n  console.log(`👤 Logged in as: ${data.user.email} (${data.user.role})`);\n  console.log(`🏢 Tenant: ${data.user.tenantId}`);\n}"
         }
       ]
     },
     {
-      "_id": "req_health_redis",
-      "parentId": "fld_health",
-      "modified": 1690675200000,
-      "created": 1690675200000,
+      "_id": "req_auth_refresh",
+      "parentId": "fld_auth",
+      "modified": 1690675290000,
+      "created": 1690675290000,
       "_type": "request",
-      "url": "{{ _.base_url }}/health/redis",
-      "name": "🔴 Redis Health Check",
-      "description": "Health check de Redis cache - verifica conectividad y funcionamiento",
-      "method": "GET",
-      "body": {},
+      "url": "{{ _.base_url }}/auth/refresh",
+      "name": "🔄 Refresh Token",
+      "description": "Renueva el access token utilizando un refresh token válido",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refreshToken\": \"{{ _.refresh_token }}\"\n}"
+      },
       "parameters": [],
       "headers": [
         {
-          "name": "Accept",
+          "name": "Content-Type",
           "value": "application/json"
         }
       ],
       "authentication": {},
-      "metaSortKey": -1690674900000,
+      "metaSortKey": -1690675290000,
       "isPrivate": false,
       "settingStoreCookies": true,
       "settingSendCookies": true,
@@ -131,31 +137,31 @@
       "settingRebuildPath": true,
       "tests": [
         {
-          "name": "Redis Connection Test",
-          "code": "const response = await insomnia.send();\nconst data = JSON.parse(response.body);\n\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('status', 'connected');\nexpect(data).to.have.property('cache', 'redis');\nexpect(data).to.have.property('timestamp');"
+          "name": "Token Refresh and Auto-Update",
+          "code": "const response = await insomnia.send();\nconst data = JSON.parse(response.body);\n\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('message', 'Token refreshed successfully');\nexpect(data).to.have.property('data');\nexpect(data.data).to.have.property('accessToken');\nexpect(data.data).to.have.property('refreshToken');\n\n// ✨ AUTO-UPDATE TOKENS IN ENVIRONMENT\nif (data.data.accessToken) {\n  insomnia.environment.auth_token = data.data.accessToken;\n  insomnia.environment.refresh_token = data.data.refreshToken;\n  console.log('🔄 Tokens automatically refreshed and updated!');\n}"
         }
       ]
     },
     {
-      "_id": "req_health_full",
-      "parentId": "fld_health",
-      "modified": 1690675200000,
-      "created": 1690675200000,
+      "_id": "req_auth_logout",
+      "parentId": "fld_auth",
+      "modified": 1690675280000,
+      "created": 1690675280000,
       "_type": "request",
-      "url": "{{ _.base_url }}/health/full",
-      "name": "🏥 Full System Health Check",
-      "description": "Health check completo del sistema - API, PostgreSQL y Redis",
-      "method": "GET",
+      "url": "{{ _.base_url }}/auth/logout",
+      "name": "🚪 Logout",
+      "description": "Cierra sesión del usuario (requiere autenticación)",
+      "method": "POST",
       "body": {},
       "parameters": [],
       "headers": [
         {
-          "name": "Accept",
-          "value": "application/json"
+          "name": "Authorization",
+          "value": "Bearer {{ _.auth_token }}"
         }
       ],
       "authentication": {},
-      "metaSortKey": -1690674800000,
+      "metaSortKey": -1690675280000,
       "isPrivate": false,
       "settingStoreCookies": true,
       "settingSendCookies": true,
@@ -164,10 +170,654 @@
       "settingRebuildPath": true,
       "tests": [
         {
-          "name": "Full System Health Test",
-          "code": "const response = await insomnia.send();\nconst data = JSON.parse(response.body);\n\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('status');\nexpect(data).to.have.property('services');\nexpect(data.services).to.have.property('api', 'ok');\nexpect(data.services).to.have.property('database');\nexpect(data.services).to.have.property('redis');\nexpect(data).to.have.property('timestamp');\n\n// Check if system is healthy\nconst isHealthy = data.status === 'healthy';\nconst allServicesUp = data.services.api === 'ok' && \n                     data.services.database === 'connected' && \n                     data.services.redis === 'connected';\n\nif (isHealthy && allServicesUp) {\n  console.log('🎉 All systems operational!');\n} else {\n  console.warn('⚠️ System degraded or unhealthy');\n}"
+          "name": "Logout Success and Clean Environment",
+          "code": "const response = await insomnia.send();\nconst data = JSON.parse(response.body);\n\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('message', 'Logout successful');\n\n// ✨ AUTO-CLEAR TOKENS FROM ENVIRONMENT\ninsomnia.environment.auth_token = '';\ninsomnia.environment.refresh_token = '';\ninsomnia.environment.user_id = '';\ninsomnia.environment.user_role = '';\nconsole.log('🚪 Logged out - tokens automatically cleared from environment');"
         }
       ]
+    },
+    {
+      "_id": "req_auth_profile",
+      "parentId": "fld_auth",
+      "modified": 1690675270000,
+      "created": 1690675270000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/auth/profile",
+      "name": "👤 Get Profile",
+      "description": "Obtiene información del perfil del usuario autenticado",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.auth_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675270000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "Profile Access Test",
+          "code": "const response = await insomnia.send();\n\nif (response.status === 401) {\n  console.log('❌ Token expired or invalid. Try refreshing token first.');\n  expect(response.status).to.equal(401);\n  return;\n}\n\nconst data = JSON.parse(response.body);\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('message', 'Profile retrieved successfully');\nexpect(data).to.have.property('data');\nexpect(data.data).to.have.property('id');\nexpect(data.data).to.have.property('email');\nexpect(data.data).to.have.property('role');\nconsole.log(`👤 Profile: ${data.data.email} (${data.data.role})`);"
+        }
+      ]
+    },
+    {
+      "_id": "req_users_list",
+      "parentId": "fld_users",
+      "modified": 1690675350000,
+      "created": 1690675350000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/users",
+      "name": "👥 List Users",
+      "description": "Lista todos los usuarios del tenant actual",
+      "method": "GET",
+      "body": {},
+      "parameters": [
+        {
+          "name": "status",
+          "value": "",
+          "description": "Filter by status: ACTIVE, SUSPENDED"
+        },
+        {
+          "name": "role",
+          "value": "",
+          "description": "Filter by role: DIRECTOR_COMUNICACION, LIDER, DIRECTOR_AREA, ASISTENTE"
+        }
+      ],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.auth_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675350000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "Users List Test",
+          "code": "const response = await insomnia.send();\n\nif (response.status === 401) {\n  console.log('❌ Token expired. Please login first.');\n  return;\n}\n\nconst data = JSON.parse(response.body);\nexpected(response.status).to.equal(200);\nexpect(data).to.have.property('message', 'Users retrieved successfully');\nexpect(data).to.have.property('data');\nexpect(Array.isArray(data.data)).to.be.true;\nconsole.log(`👥 Found ${data.data.length} users`);"
+        }
+      ]
+    },
+    {
+      "_id": "req_users_create",
+      "parentId": "fld_users",
+      "modified": 1690675340000,
+      "created": 1690675340000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/users",
+      "name": "➕ Create User",
+      "description": "Crea un nuevo usuario en el tenant actual (solo DIRECTOR_COMUNICACION)",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"nuevo@demo.com\",\n  \"username\": \"nuevo_usuario\",\n  \"role\": \"ANALISTA\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.auth_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675340000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "User Creation Test",
+          "code": "const response = await insomnia.send();\n\nif (response.status === 403) {\n  console.log('❌ Access denied. Only DIRECTOR_COMUNICACION can create users.');\n  return;\n}\n\nif (response.status === 401) {\n  console.log('❌ Token expired. Please login first.');\n  return;\n}\n\nconst data = JSON.parse(response.body);\nexpect(response.status).to.equal(201);\nexpect(data).to.have.property('message', 'User created successfully');\nexpect(data).to.have.property('data');\nexpected(data.data).to.have.property('temporaryPassword');\nconsole.log(`✅ User created: ${data.data.email}`);\nconsole.log(`🔑 Temporary password: ${data.data.temporaryPassword}`);"
+        }
+      ]
+    },
+    {
+      "_id": "req_users_get_by_id",
+      "parentId": "fld_users",
+      "modified": 1690675330000,
+      "created": 1690675330000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/users/USER_ID_HERE",
+      "name": "🎯 Get User by ID",
+      "description": "Obtiene un usuario específico por su ID",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.auth_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675330000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "Get User by ID Test",
+          "code": "const response = await insomnia.send();\n\nif (response.status === 404) {\n  console.log('❌ User not found. Check the user ID.');\n  return;\n}\n\nif (response.status === 401) {\n  console.log('❌ Token expired. Please login first.');\n  return;\n}\n\nconst data = JSON.parse(response.body);\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('message', 'User retrieved successfully');\nexpect(data).to.have.property('data');\nconsole.log(`👤 User: ${data.data.email} (${data.data.role})`);"
+        }
+      ]
+    },
+    {
+      "_id": "req_users_suspend",
+      "parentId": "fld_users",
+      "modified": 1690675320000,
+      "created": 1690675320000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/users/USER_ID_HERE/suspend",
+      "name": "⛔ Suspend User",
+      "description": "Suspende un usuario (solo DIRECTOR_COMUNICACION)",
+      "method": "PUT",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"reason\": \"Violation of company policy\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.auth_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675320000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "User Suspension Test",
+          "code": "const response = await insomnia.send();\n\nif (response.status === 403) {\n  console.log('❌ Access denied. Only DIRECTOR_COMUNICACION can suspend users.');\n  return;\n}\n\nif (response.status === 404) {\n  console.log('❌ User not found.');\n  return;\n}\n\nconst data = JSON.parse(response.body);\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('message', 'User suspended successfully');\nconsole.log('⛔ User suspended successfully.');"
+        }
+      ]
+    },
+    {
+      "_id": "req_users_reactivate",
+      "parentId": "fld_users",
+      "modified": 1690675310000,
+      "created": 1690675310000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/users/USER_ID_HERE/reactivate",
+      "name": "✅ Reactivate User",  
+      "description": "Reactiva un usuario suspendido (solo DIRECTOR_COMUNICACION)",
+      "method": "PUT",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.auth_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675310000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "User Reactivation Test",
+          "code": "const response = await insomnia.send();\n\nif (response.status === 403) {\n  console.log('❌ Access denied. Only DIRECTOR_COMUNICACION can reactivate users.');\n  return;\n}\n\nconarest data = JSON.parse(response.body);\nexpect(response.status).to.equal(200);\nexpected(data).to.have.property('message', 'User reactivated successfully');\nconsole.log('✅ User reactivated successfully.');"
+        }
+      ]
+    },
+    {
+      "_id": "req_users_delete",
+      "parentId": "fld_users",
+      "modified": 1690675300000,
+      "created": 1690675300000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/users/USER_ID_HERE",
+      "name": "🗑️ Delete User",
+      "description": "Elimina un usuario permanentemente (solo DIRECTOR_COMUNICACION)",
+      "method": "DELETE",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"reason\": \"Account closure requested\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.auth_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675300000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "User Deletion Test",
+          "code": "const response = await insomnia.send();\n\nif (response.status === 403) {\n  console.log('❌ Access denied. Only DIRECTOR_COMUNICACION can delete users.');\n  return;\n}\n\nconst data = JSON.parse(response.body);\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('message', 'User deleted successfully');\nconsole.log('🗑️ User deleted permanently.');"
+        }
+      ]
+    },
+    {
+      "_id": "req_tenants_list",
+      "parentId": "fld_tenants",
+      "modified": 1690675400000,
+      "created": 1690675400000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/tenants",
+      "name": "🏢 List Tenants",
+      "description": "Lista tenants (SUPER_ADMIN ve todos, otros solo el suyo)",
+      "method": "GET",
+      "body": {},
+      "parameters": [
+        {
+          "name": "status",
+          "value": "",
+          "description": "Filter by status: ACTIVE, SUSPENDED"
+        },
+        {
+          "name": "type",
+          "value": "",
+          "description": "Filter by type: GOVERNMENT_STATE, GOVERNMENT_MUNICIPAL, HIGH_PROFILE"
+        }
+      ],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.auth_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675400000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "Tenants List Test",
+          "code": "const response = await insomnia.send();\nconst data = JSON.parse(response.body);\n\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('message', 'Tenants retrieved successfully');\nexpected(data).to.have.property('data');\nexpect(Array.isArray(data.data)).to.be.true;\nconsole.log(`🏢 Found ${data.total} tenants`);"
+        }
+      ]
+    },
+    {
+      "_id": "req_tenants_create",
+      "parentId": "fld_tenants",
+      "modified": 1690675390000,
+      "created": 1690675390000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/tenants",
+      "name": "➕ Create Tenant",
+      "description": "Crea un nuevo tenant (solo SUPER_ADMIN)",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Nuevo Tenant Demo\",\n  \"type\": \"GOVERNMENT_STATE\",\n  \"settings\": {\n    \"theme\": \"dark\",\n    \"language\": \"es\"\n  }\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.auth_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675390000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "Tenant Creation Test",
+          "code": "const response = await insomnia.send();\n\nif (response.status === 403) {\n  console.log('❌ Access denied. Only SUPER_ADMIN can create tenants.');\n  return;\n}\n\nconst data = JSON.parse(response.body);\nexpect(response.status).to.equal(201);\nexpected(data).to.have.property('message', 'Tenant created successfully');\nconsole.log(`✅ Tenant created: ${data.data.name}`);"
+        }
+      ]
+    },
+    {
+      "_id": "req_tenants_get_by_id",
+      "parentId": "fld_tenants",
+      "modified": 1690675380000,
+      "created": 1690675380000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/tenants/TENANT_ID_HERE",
+      "name": "🎯 Get Tenant by ID",
+      "description": "Obtiene un tenant específico por su ID",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.auth_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675380000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "Get Tenant by ID Test",
+          "code": "const response = await insomnia.send();\n\nif (response.status === 404) {\n  console.log('❌ Tenant not found.');\n  return;\n}\n\nconst data = JSON.parse(response.body);\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('message', 'Tenant retrieved successfully');\nconsole.log(`🏢 Tenant: ${data.data.name} (${data.data.type})`);"
+        }
+      ]
+    },
+    {
+      "_id": "req_tenants_update",
+      "parentId": "fld_tenants",
+      "modified": 1690675370000,
+      "created": 1690675370000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/tenants/TENANT_ID_HERE",
+      "name": "✏️ Update Tenant",
+      "description": "Actualiza un tenant (SUPER_ADMIN o propietario)",
+      "method": "PUT",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Tenant Actualizado\",\n  \"settings\": {\n    \"theme\": \"light\",\n    \"notifications\": true\n  }\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.auth_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675370000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "Tenant Update Test",
+          "code": "const response = await insomnia.send();\n\nif (response.status === 403) {\n  console.log('❌ Access denied to update this tenant.');\n  return;\n}\n\nconst data = JSON.parse(response.body);\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('message', 'Tenant updated successfully');\nconsole.log('✏️ Tenant updated successfully.');"
+        }
+      ]
+    },
+    {
+      "_id": "req_tenants_stats",
+      "parentId": "fld_tenants",
+      "modified": 1690675360000,
+      "created": 1690675360000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/tenants/TENANT_ID_HERE/stats",
+      "name": "📊 Get Tenant Stats",
+      "description": "Obtiene estadísticas del tenant",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.auth_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675360000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "Tenant Stats Test",
+          "code": "const response = await insomnia.send();\nconst data = JSON.parse(response.body);\n\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('message', 'Tenant statistics retrieved successfully');\nexpect(data).to.have.property('data');\nexpect(data.data).to.have.property('users');\nexpect(data.data).to.have.property('content');\nexpect(data.data).to.have.property('alerts');\nconsole.log(`📊 Stats - Users: ${data.data.users.total}, Content: ${data.data.content.tweets + data.data.content.news}`);"
+        }
+      ]
+    },
+    {
+      "_id": "req_audit_logs",
+      "parentId": "fld_audit",
+      "modified": 1690675450000,
+      "created": 1690675450000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/audit/logs",
+      "name": "📋 Get Audit Logs",
+      "description": "Obtiene logs de auditoría (solo DIRECTOR_COMUNICACION)",
+      "method": "GET",
+      "body": {},
+      "parameters": [
+        {
+          "name": "action",
+          "value": "",
+          "description": "Filter by action type"
+        },
+        {
+          "name": "entityType",
+          "value": "",
+          "description": "Filter by entity type"
+        },
+        {
+          "name": "startDate",
+          "value": "",
+          "description": "Filter from date (ISO string)"
+        },
+        {
+          "name": "endDate",
+          "value": "",
+          "description": "Filter to date (ISO string)"
+        },
+        {
+          "name": "page",
+          "value": "1",
+          "description": "Page number"
+        },
+        {
+          "name": "limit",
+          "value": "10",
+          "description": "Items per page"
+        }
+      ],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.auth_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675450000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "Audit Logs Test",
+          "code": "const response = await insomnia.send();\n\nif (response.status === 403) {\n  console.log('❌ Access denied. Only DIRECTOR_COMUNICACION can view audit logs.');\n  return;\n}\n\nconst data = JSON.parse(response.body);\nexpect(response.status).to.equal(200);\nexpected(data).to.have.property('message', 'Audit logs retrieved successfully');\nexpect(data).to.have.property('data');\nconsole.log(`📋 Found ${data.pagination.total} audit logs`);"
+        }
+      ]
+    },
+    {
+      "_id": "req_audit_stats",
+      "parentId": "fld_audit",
+      "modified": 1690675440000,
+      "created": 1690675440000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/audit/stats",
+      "name": "📊 Get Audit Stats",
+      "description": "Obtiene estadísticas de auditoría",
+      "method": "GET",
+      "body": {},
+      "parameters": [
+        {
+          "name": "period",
+          "value": "7d",
+          "description": "Period: 1d, 7d, 30d, 90d"
+        }
+      ],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.auth_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675440000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "Audit Stats Test",
+          "code": "const response = await insomnia.send();\nconst data = JSON.parse(response.body);\n\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('message', 'Audit statistics retrieved successfully');\nexpected(data).to.have.property('data');\nconsole.log(`📊 Audit events in last 7 days: ${data.data.totalEvents}`);"
+        }
+      ]
+    },
+    {
+      "_id": "req_audit_export",
+      "parentId": "fld_audit",
+      "modified": 1690675430000,
+      "created": 1690675430000,
+      "_type": "request",
+      "url": "{{ _.base_url }}/audit/export",
+      "name": "📤 Export Audit Logs",
+      "description": "Exporta logs de auditoría en formato CSV/JSON",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"format\": \"csv\",\n  \"startDate\": \"2025-07-01T00:00:00.000Z\",\n  \"endDate\": \"2025-07-30T23:59:59.999Z\",\n  \"actions\": [\"USER_CREATED\", \"USER_UPDATED\", \"LOGIN\"]\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.auth_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1690675430000,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "tests": [
+        {
+          "name": "Audit Export Test",
+          "code": "const response = await insomnia.send();\nconst data = JSON.parse(response.body);\n\nexpect(response.status).to.equal(200);\nexpect(data).to.have.property('message', 'Audit logs exported successfully');\nexpect(data).to.have.property('data');\nconsole.log(`📤 Export created with ${data.data.totalRecords} records`);"
+        }
+      ]
+    },
+    {
+      "_id": "fld_auth",
+      "parentId": "wrk_main",
+      "modified": 1690675300000,
+      "created": 1690675300000,
+      "_type": "request_group",
+      "name": "🔐 Auth & Security",
+      "description": "Endpoints de autenticación, autorización y seguridad del sistema",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1690675300000
+    },
+    {
+      "_id": "fld_users",
+      "parentId": "wrk_main",
+      "modified": 1690675350000,
+      "created": 1690675350000,
+      "_type": "request_group",
+      "name": "👥 User Management",
+      "description": "Gestión de usuarios con multi-tenancy y control de roles",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1690675350000
+    },
+    {
+      "_id": "fld_tenants",
+      "parentId": "wrk_main",
+      "modified": 1690675400000,
+      "created": 1690675400000,
+      "_type": "request_group",
+      "name": "🏢 Tenant Management",
+      "description": "Gestión de tenants - organizaciones del sistema",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1690675400000
+    },
+    {
+      "_id": "fld_audit",
+      "parentId": "wrk_main",
+      "modified": 1690675450000,
+      "created": 1690675450000,
+      "_type": "request_group",
+      "name": "📋 Audit & Compliance",
+      "description": "Sistema de auditoría y trazabilidad completa",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1690675450000
     },
     {
       "_id": "fld_health",
@@ -187,8 +837,8 @@
       "modified": 1690675200000,
       "created": 1690675200000,
       "_type": "workspace",
-      "name": "Thoth Analytics API",
-      "description": "API para sistema de inteligencia de comunicación gubernamental",
+      "name": "Thoth Analytics API - Sprint 02",
+      "description": "API para sistema de inteligencia de comunicación gubernamental - Sprint 02: Auth & Multi-tenancy",
       "scope": "collection"
     },
     {
@@ -204,7 +854,8 @@
         "auth_token": "",
         "refresh_token": "",
         "tenant_id": "",
-        "user_id": ""
+        "user_id": "",
+        "user_role": ""
       },
       "dataPropertyOrder": {
         "&": [
@@ -213,7 +864,8 @@
           "auth_token",
           "refresh_token",
           "tenant_id",
-          "user_id"
+          "user_id",
+          "user_role"
         ]
       },
       "color": null,
