@@ -15,6 +15,8 @@ import { ConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
 import { ScrapersModule } from './scrapers/scrapers.module';
 import { AiProcessingModule } from './ai-processing/ai-processing.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { WebsocketModule } from './websocket/websocket.module';
 import redisConfig from './config/redis.config';
 
 @Module({
@@ -46,6 +48,8 @@ import redisConfig from './config/redis.config';
     ConfigModule,
     ScrapersModule,
     AiProcessingModule,
+    DashboardModule,
+    WebsocketModule,
   ],
   controllers: [AppController],
   providers: [AppService],

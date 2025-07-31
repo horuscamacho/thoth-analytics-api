@@ -1,0 +1,259 @@
+import { 
+  Controller, 
+  Get, 
+  Query, 
+  UseGuards, 
+  Req, 
+  Res,
+  StreamableFile,
+  Header
+} from '@nestjs/common';
+// import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
+import { JwtGuard } from '../auth/guards/jwt/jwt.guard';
+import { RolesGuard } from '../auth/guards/roles/roles.guard';
+import { ROLES } from '../auth/decorators/roles.decorator';
+import { UserRole } from '@prisma/client';
+import { DashboardService } from './dashboard.service';
+import { 
+  DashboardFiltersDto, 
+  DashboardDataDto, 
+  ContentSearchResultDto,
+  DashboardStatsDto,
+  ExportFiltersDto 
+} from './dto';
+import { Response } from 'express';
+
+// @ApiTags('Dashboard')
+// @ApiBearerAuth()
+@UseGuards(JwtGuard, RolesGuard)
+@Controller('dashboard')
+export class DashboardController {
+  constructor(private readonly dashboardService: DashboardService) {}
+
+  @Get('overview')
+  // @ApiOperation({ 
+  //   summary: 'Get dashboard overview with key metrics',
+  //   description: 'Returns comprehensive dashboard data including metrics, trends, and summaries'
+  // })
+  // @ApiResponse({ 
+  //   status: 200, 
+  //   description: 'Dashboard data retrieved successfully',
+  //   type: DashboardDataDto 
+  // })
+  @ROLES(UserRole.DIRECTOR_COMUNICACION, UserRole.LIDER, UserRole.DIRECTOR_AREA, UserRole.ASISTENTE)
+  async getDashboardOverview(
+    @Query() filters: DashboardFiltersDto,
+    @Req() req: any
+  ): Promise<DashboardDataDto> {
+    return this.dashboardService.getDashboardData(req.user.tenantId, filters);
+  }
+
+  @Get('metrics')
+  @ApiOperation({ 
+    summary: 'Get system metrics only',
+    description: 'Returns basic system metrics without detailed breakdowns'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Metrics retrieved successfully' 
+  })
+  @ROLES(UserRole.DIRECTOR_COMUNICACION, UserRole.LIDER, UserRole.DIRECTOR_AREA, UserRole.ASISTENTE)
+  async getMetrics(
+    @Query() filters: DashboardFiltersDto,
+    @Req() req: any
+  ) {
+    return this.dashboardService.getMetrics(req.user.tenantId, filters);
+  }
+
+  @Get('content')
+  @ApiOperation({ 
+    summary: 'Search and filter content',
+    description: 'Advanced search and filtering of tweets and news with pagination'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Content search results',
+    type: ContentSearchResultDto 
+  })
+  @ApiQuery({ name: 'search', required: false, description: 'Full-text search term' })
+  @ApiQuery({ name: 'contentType', required: false, enum: ['TWEET', 'NEWS', 'ALL'] })
+  @ApiQuery({ name: 'sources', required: false, description: 'Comma-separated list of sources' })
+  @ROLES(UserRole.DIRECTOR_COMUNICACION, UserRole.LIDER, UserRole.DIRECTOR_AREA, UserRole.ASISTENTE)
+  async searchContent(
+    @Query() filters: DashboardFiltersDto,
+    @Req() req: any
+  ): Promise<ContentSearchResultDto> {
+    return this.dashboardService.searchContent(req.user.tenantId, filters);
+  }
+
+  @Get('trends/sentiment')
+  @ApiOperation({ 
+    summary: 'Get sentiment trends over time',
+    description: 'Returns sentiment analysis trends for specified date range'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Sentiment trends retrieved successfully' 
+  })
+  @ROLES(UserRole.DIRECTOR_COMUNICACION, UserRole.LIDER, UserRole.DIRECTOR_AREA)
+  async getSentimentTrends(
+    @Query() filters: DashboardFiltersDto,
+    @Req() req: any
+  ) {
+    return this.dashboardService.getSentimentTrends(req.user.tenantId, filters);
+  }
+
+  @Get('trends/risk')
+  @ApiOperation({ 
+    summary: 'Get risk distribution and trends',
+    description: 'Returns risk assessment distribution and trends over time'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Risk trends retrieved successfully' 
+  })
+  @ROLES(UserRole.DIRECTOR_COMUNICACION, UserRole.LIDER, UserRole.DIRECTOR_AREA)
+  async getRiskTrends(
+    @Query() filters: DashboardFiltersDto,
+    @Req() req: any
+  ) {
+    return this.dashboardService.getRiskTrends(req.user.tenantId, filters);
+  }
+
+  @Get('entities/top')
+  @ApiOperation({ 
+    summary: 'Get top mentioned entities',
+    description: 'Returns most frequently mentioned entities with their metrics'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Top entities retrieved successfully' 
+  })
+  @ApiQuery({ name: 'limit', required: false, description: 'Number of top entities to return (default: 20)' })
+  @ROLES(UserRole.DIRECTOR_COMUNICACION, UserRole.LIDER, UserRole.DIRECTOR_AREA)
+  async getTopEntities(
+    @Query() filters: DashboardFiltersDto,
+    @Query('limit') limit: number = 20,
+    @Req() req: any
+  ) {
+    return this.dashboardService.getTopEntities(req.user.tenantId, filters, limit);
+  }
+
+  @Get('sources/metrics')
+  @ApiOperation({ 
+    summary: 'Get metrics by content source',
+    description: 'Returns performance metrics broken down by content source'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Source metrics retrieved successfully' 
+  })
+  @ROLES(UserRole.DIRECTOR_COMUNICACION, UserRole.LIDER, UserRole.DIRECTOR_AREA)
+  async getSourceMetrics(
+    @Query() filters: DashboardFiltersDto,
+    @Req() req: any
+  ) {
+    return this.dashboardService.getSourceMetrics(req.user.tenantId, filters);
+  }
+
+  @Get('activity/hourly')
+  @ApiOperation({ 
+    summary: 'Get activity distribution by hour',
+    description: 'Returns content activity patterns throughout the day'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Hourly activity data retrieved successfully' 
+  })
+  @ROLES(UserRole.DIRECTOR_COMUNICACION, UserRole.LIDER, UserRole.DIRECTOR_AREA)
+  async getHourlyActivity(
+    @Query() filters: DashboardFiltersDto,
+    @Req() req: any
+  ) {
+    return this.dashboardService.getHourlyActivity(req.user.tenantId, filters);
+  }
+
+  @Get('alerts/summary')
+  @ApiOperation({ 
+    summary: 'Get alerts summary',
+    description: 'Returns summary of alerts by status and priority'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Alerts summary retrieved successfully' 
+  })
+  @ROLES(UserRole.DIRECTOR_COMUNICACION, UserRole.LIDER, UserRole.DIRECTOR_AREA, UserRole.ASISTENTE)
+  async getAlertsSummary(
+    @Query() filters: DashboardFiltersDto,
+    @Req() req: any
+  ) {
+    return this.dashboardService.getAlertsSummary(req.user.tenantId, filters);
+  }
+
+  @Get('export')
+  @ApiOperation({ 
+    summary: 'Export dashboard data',
+    description: 'Export dashboard data in specified format (PDF, CSV, JSON)'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Export file generated successfully',
+    content: {
+      'application/pdf': { schema: { type: 'string', format: 'binary' } },
+      'text/csv': { schema: { type: 'string' } },
+      'application/json': { schema: { type: 'object' } }
+    }
+  })
+  @Header('Content-Disposition', 'attachment')
+  @ROLES(UserRole.DIRECTOR_COMUNICACION, UserRole.LIDER, UserRole.DIRECTOR_AREA)
+  async exportDashboard(
+    @Query() filters: ExportFiltersDto,
+    @Req() req: any,
+    @Res({ passthrough: true }) res: Response
+  ): Promise<StreamableFile> {
+    const { buffer, contentType, filename } = await this.dashboardService.exportDashboard(
+      req.user.tenantId, 
+      filters
+    );
+
+    res.set({
+      'Content-Type': contentType,
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+
+    return new StreamableFile(buffer);
+  }
+
+  @Get('stats')
+  @ApiOperation({ 
+    summary: 'Get dashboard system statistics',
+    description: 'Returns performance and system statistics for the dashboard'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Dashboard stats retrieved successfully',
+    type: DashboardStatsDto 
+  })
+  @ROLES(UserRole.DIRECTOR_COMUNICACION, UserRole.LIDER)
+  async getDashboardStats(@Req() req: any): Promise<DashboardStatsDto> {
+    return this.dashboardService.getDashboardStats(req.user.tenantId);
+  }
+
+  @Get('health')
+  @ApiOperation({ 
+    summary: 'Dashboard health check',
+    description: 'Check if dashboard services are responding correctly'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Dashboard health status' 
+  })
+  async getHealth() {
+    return {
+      status: 'ok',
+      service: 'dashboard',
+      timestamp: new Date().toISOString(),
+      version: '1.0.0'
+    };
+  }
+}

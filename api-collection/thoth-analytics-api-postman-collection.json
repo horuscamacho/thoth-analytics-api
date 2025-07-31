@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-    "name": "Thoth Analytics API - Sprint 04",
-    "description": "Colección completa de endpoints para Thoth Analytics API con autenticación JWT, multi-tenancy, sistema de auditoría, scraper integration y AI processing con análisis multi-capa. ✅ TODOS LOS ENDPOINTS PROBADOS Y FUNCIONANDO - Sprint 4 COMPLETADO (30 JUL 2025)",
+    "name": "Thoth Analytics API - Sprint 05",
+    "description": "Colección completa de endpoints para Thoth Analytics API con autenticación JWT, multi-tenancy, sistema de auditoría, scraper integration, AI processing con análisis multi-capa y Dashboard & Visualization con filtros avanzados. ✅ TODOS LOS ENDPOINTS PROBADOS Y FUNCIONANDO - Sprint 5 COMPLETADO (31 JUL 2025)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "12345678"
   },
@@ -1929,6 +1929,885 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "📊 Dashboard",
+      "item": [
+        {
+          "name": "Dashboard Overview",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Dashboard structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('metrics');",
+                  "    pm.expect(jsonData).to.have.property('sentimentTrends');",
+                  "    pm.expect(jsonData).to.have.property('riskDistribution');",
+                  "    pm.expect(jsonData).to.have.property('topEntities');",
+                  "    pm.expect(jsonData).to.have.property('sourceMetrics');",
+                  "    pm.expect(jsonData).to.have.property('activityByHour');",
+                  "    pm.expect(jsonData).to.have.property('alertsSummary');",
+                  "    pm.expect(jsonData).to.have.property('generatedAt');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('📊 DASHBOARD OVERVIEW:');",
+                  "console.log('📈 Total tweets:', response.metrics.totalTweets);",
+                  "console.log('📰 Total noticias:', response.metrics.totalNews);",
+                  "console.log('🔍 Total análisis:', response.metrics.totalAnalysis);",
+                  "console.log('🚨 Total alertas:', response.metrics.totalAlerts);",
+                  "console.log('⚠️ Alertas activas:', response.metrics.activeAlerts);",
+                  "console.log('😊 Sentimiento promedio:', response.metrics.averageSentimentScore.toFixed(1));",
+                  "console.log('🎯 Risk Score promedio:', response.metrics.averageRiskScore.toFixed(1));",
+                  "console.log('⚡ Cola procesamiento:', response.metrics.processingQueueSize);",
+                  "console.log('🔄 Generado:', new Date(response.generatedAt).toLocaleString());"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/overview?startDate=2025-01-01&endDate=2025-12-31",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "overview"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-01",
+                  "description": "Fecha inicio para filtrar datos (opcional)"
+                },
+                {
+                  "key": "endDate", 
+                  "value": "2025-12-31",
+                  "description": "Fecha fin para filtrar datos (opcional)"
+                }
+              ]
+            },
+            "description": "Obtener vista completa del dashboard con métricas, tendencias, distribuciones y resúmenes"
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard Metrics Only",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Metrics structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('totalTweets');",
+                  "    pm.expect(jsonData).to.have.property('totalNews');",
+                  "    pm.expect(jsonData).to.have.property('totalAnalysis');",
+                  "    pm.expect(jsonData).to.have.property('totalAlerts');",
+                  "    pm.expect(jsonData).to.have.property('activeAlerts');",
+                  "    pm.expect(jsonData).to.have.property('averageRiskScore');",
+                  "    pm.expect(jsonData).to.have.property('averageSentimentScore');",
+                  "    pm.expect(jsonData).to.have.property('processingQueueSize');",
+                  "    pm.expect(jsonData).to.have.property('lastUpdate');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('📊 MÉTRICAS RÁPIDAS:');",
+                  "console.log('📈 Tweets:', response.totalTweets);",
+                  "console.log('📰 Noticias:', response.totalNews);",
+                  "console.log('🔍 Analyses:', response.totalAnalysis);",
+                  "console.log('🚨 Alertas:', response.totalAlerts + ' (activas: ' + response.activeAlerts + ')');",
+                  "console.log('😊 Sentimiento:', response.averageSentimentScore.toFixed(1) + '/100');",
+                  "console.log('⚠️ Riesgo:', response.averageRiskScore.toFixed(1) + '/100');",
+                  "console.log('⚡ Cola:', response.processingQueueSize + ' jobs pendientes');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "metrics"]
+            },
+            "description": "Endpoint más rápido para obtener solo las métricas principales del dashboard"
+          },
+          "response": []
+        },
+        {
+          "name": "Sentiment Trends",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/trends/sentiment?startDate=2025-01-01&endDate=2025-01-31",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "trends", "sentiment"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-01-31"
+                }
+              ]
+            },
+            "description": "Obtener tendencias de análisis de sentimientos a lo largo del tiempo"
+          },
+          "response": []
+        },
+        {
+          "name": "Risk Trends",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/trends/risk?startDate=2025-01-01&endDate=2025-01-31",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "trends", "risk"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-01-31"
+                }
+              ]
+            },
+            "description": "Obtener tendencias de evaluación de riesgos a lo largo del tiempo"
+          },
+          "response": []
+        },
+        {
+          "name": "Top Entities",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/entities/top",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "entities", "top"]
+            },
+            "description": "Obtener las entidades y temas más mencionados"
+          },
+          "response": []
+        },
+        {
+          "name": "Source Metrics",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/sources/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "sources", "metrics"]
+            },
+            "description": "Obtener métricas de rendimiento de fuentes de contenido"
+          },
+          "response": []
+        },
+        {
+          "name": "Activity by Hour",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/activity/hourly",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "activity", "hourly"]
+            },
+            "description": "Obtener actividad de contenido por hora del día"
+          },
+          "response": []
+        },
+        {
+          "name": "Alerts Summary",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/alerts/summary",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "alerts", "summary"]
+            },
+            "description": "Obtener resumen de alertas y conteo de alertas activas"
+          },
+          "response": []
+        },
+        {
+          "name": "Dashboard Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/dashboard/health",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "health"]
+            },
+            "description": "Health check del servicio de dashboard"
+          },
+          "response": []
+        },
+        {
+          "name": "Advanced Search",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Advanced search structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('results');",
+                  "    pm.expect(jsonData).to.have.property('pagination');",
+                  "    pm.expect(jsonData).to.have.property('filters');",
+                  "    pm.expect(jsonData.pagination).to.have.property('total');",
+                  "    pm.expect(jsonData.pagination).to.have.property('page');",
+                  "    pm.expect(jsonData.pagination).to.have.property('limit');",
+                  "    pm.expect(jsonData.pagination).to.have.property('totalPages');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('🔍 BÚSQUEDA AVANZADA:');",
+                  "console.log('📊 Total resultados:', response.pagination.total);",
+                  "console.log('📄 Página:', response.pagination.page + '/' + response.pagination.totalPages);",
+                  "console.log('📋 Resultados en página:', response.results.length);",
+                  "console.log('🔍 Query:', response.query || 'Sin query de texto');",
+                  "console.log('📊 Filtros aplicados:');",
+                  "console.log('  📝 Tipos contenido:', response.filters.contentTypes);",
+                  "console.log('  📰 Fuentes:', response.filters.sources);",
+                  "console.log('  🏷️ Tags:', response.filters.tags);",
+                  "console.log('  😊 Rango sentimiento:', response.filters.sentimentRange.min + '-' + response.filters.sentimentRange.max);",
+                  "console.log('  ⚠️ Rango riesgo:', response.filters.riskRange.min + '-' + response.filters.riskRange.max);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"searchQuery\": \"gobierno\",\n  \"startDate\": \"2025-01-01\",\n  \"endDate\": \"2025-01-31\",\n  \"contentTypes\": [\"TWEET\", \"NEWS\"],\n  \"sources\": [\"Twitter\"],\n  \"tags\": [\"política\"],\n  \"minSentiment\": 30,\n  \"maxSentiment\": 100,\n  \"minRisk\": 0,\n  \"maxRisk\": 50,\n  \"sortBy\": \"createdAt\",\n  \"sortOrder\": \"desc\",\n  \"page\": 1,\n  \"limit\": 20,\n  \"includeArchived\": false,\n  \"groupBy\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/dashboard/advanced/search",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "advanced", "search"]
+            },
+            "description": "Búsqueda avanzada con filtros múltiples: texto, fechas, tipos, fuentes, sentimiento, riesgo, etc."
+          },
+          "response": []
+        },
+        {
+          "name": "Search Suggestions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('💡 SUGERENCIAS DE BÚSQUEDA:');",
+                  "if (response.entities) {",
+                  "    console.log('👥 Entidades (' + response.entities.length + '):', response.entities.slice(0, 5).join(', '));",
+                  "}",
+                  "if (response.sources) {",
+                  "    console.log('📰 Fuentes (' + response.sources.length + '):', response.sources.slice(0, 3).join(', '));",
+                  "}",
+                  "if (response.tags) {",
+                  "    console.log('🏷️ Tags (' + response.tags.length + '):', response.tags.slice(0, 5).join(', '));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/search/suggestions?query=mor&type=all&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "search", "suggestions"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "mor",
+                  "description": "Texto parcial para búsqueda de sugerencias"
+                },
+                {
+                  "key": "type",
+                  "value": "all",
+                  "description": "Tipo: all, entities, sources, tags"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Número máximo de sugerencias por tipo"
+                }
+              ]
+            },
+            "description": "Obtener sugerencias para autocompletado de búsquedas"
+          },
+          "response": []
+        },
+        {
+          "name": "Filter Statistics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('📊 ESTADÍSTICAS DE FILTROS:');",
+                  "console.log('📊 Total filtrado:', response.totalFiltered || 0);",
+                  "if (response.contentTypes) {",
+                  "    console.log('📝 Distribución tipos:');",
+                  "    response.contentTypes.forEach(ct => {",
+                  "        console.log('  ' + ct.type + ': ' + ct._count + ' elementos');",
+                  "    });",
+                  "}",
+                  "if (response.dateRange) {",
+                  "    console.log('📅 Rango fechas:', new Date(response.dateRange.min_date).toLocaleDateString() + ' - ' + new Date(response.dateRange.max_date).toLocaleDateString());",
+                  "}",
+                  "if (response.sentimentDistribution) {",
+                  "    console.log('😊 Distribución sentimiento:', response.sentimentDistribution.length + ' grupos');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2025-01-01\",\n  \"endDate\": \"2025-01-31\",\n  \"contentTypes\": [\"TWEET\"],\n  \"minSentiment\": 0,\n  \"maxSentiment\": 100\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/dashboard/filters/stats",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "filters", "stats"]
+            },
+            "description": "Obtener estadísticas para la selección actual de filtros"
+          },
+          "response": []
+        },
+        {
+          "name": "Export Data (CSV)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Export response structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "    pm.expect(jsonData).to.have.property('format');",
+                  "    pm.expect(jsonData).to.have.property('estimatedRecords');",
+                  "    pm.expect(jsonData).to.have.property('exportId');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "pm.collectionVariables.set('last_export_id', response.exportId);",
+                  "console.log('📤 EXPORTACIÓN PROGRAMADA:');",
+                  "console.log('📊 Estado:', response.status);",
+                  "console.log('📄 Formato:', response.format);",
+                  "console.log('📋 Registros estimados:', response.estimatedRecords);",
+                  "console.log('🆔 Export ID:', response.exportId);",
+                  "console.log('💬 Mensaje:', response.message);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"format\": \"csv\",\n  \"startDate\": \"2025-01-01\",\n  \"endDate\": \"2025-01-31\",\n  \"contentTypes\": [\"TWEET\", \"NEWS\"],\n  \"fields\": [\"createdAt\", \"sentiment\", \"threatLevel\", \"tags\"],\n  \"includeMetadata\": true,\n  \"minRisk\": 50\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/dashboard/export",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "export"]
+            },
+            "description": "Exportar datos del dashboard con filtros. Formatos: csv, xlsx, json, pdf"
+          },
+          "response": []
+        },
+        {
+          "name": "Export Data (Excel)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"format\": \"xlsx\",\n  \"startDate\": \"2025-01-01\",\n  \"endDate\": \"2025-01-31\",\n  \"includeMetadata\": true,\n  \"groupBy\": \"source\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/dashboard/export",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "export"]
+            },
+            "description": "Exportar datos del dashboard en formato Excel con agrupación"
+          },
+          "response": []
+        },
+        {
+          "name": "Aggregated Trends (Daily)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Trends structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('interval');",
+                  "    pm.expect(jsonData).to.have.property('trends');",
+                  "    pm.expect(jsonData).to.have.property('metadata');",
+                  "    pm.expect(jsonData.metadata).to.have.property('totalPeriods');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('📈 TENDENCIAS AGREGADAS:');",
+                  "console.log('⏰ Intervalo:', response.interval);",
+                  "console.log('📊 Períodos totales:', response.metadata.totalPeriods);",
+                  "console.log('📅 Rango:', response.metadata.startDate + ' - ' + response.metadata.endDate);",
+                  "console.log('📋 Datos de tendencias:', response.trends.length + ' puntos');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/trends/aggregated?startDate=2025-01-01&endDate=2025-01-07&aggregationInterval=day",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "trends", "aggregated"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-01-07"
+                },
+                {
+                  "key": "aggregationInterval",
+                  "value": "day",
+                  "description": "day, hour, week, month"
+                }
+              ]
+            },
+            "description": "Obtener tendencias agregadas con intervalos personalizados"
+          },
+          "response": []
+        },
+        {
+          "name": "Aggregated Trends (Hourly)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/trends/aggregated?startDate=2025-01-30&endDate=2025-01-31&aggregationInterval=hour",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "trends", "aggregated"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-30"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-01-31"
+                },
+                {
+                  "key": "aggregationInterval",
+                  "value": "hour"
+                }
+              ]
+            },
+            "description": "Tendencias agregadas por horas (útil para análisis de períodos cortos)"
+          },
+          "response": []
+        },
+        {
+          "name": "Comparative Analytics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Comparative structure\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('currentPeriod');",
+                  "    pm.expect(jsonData).to.have.property('previousPeriod');",
+                  "    pm.expect(jsonData).to.have.property('changes');",
+                  "    pm.expect(jsonData.changes).to.have.property('totalTweets');",
+                  "    pm.expect(jsonData.changes).to.have.property('totalNews');",
+                  "    pm.expect(jsonData.changes).to.have.property('averageSentiment');",
+                  "    pm.expect(jsonData.changes).to.have.property('averageRisk');",
+                  "});",
+                  "",
+                  "const response = pm.response.json();",
+                  "console.log('📊 ANALÍTICA COMPARATIVA:');",
+                  "console.log('📅 Período actual:', new Date(response.currentPeriod.start).toLocaleDateString() + ' - ' + new Date(response.currentPeriod.end).toLocaleDateString());",
+                  "console.log('📅 Período anterior:', new Date(response.previousPeriod.start).toLocaleDateString() + ' - ' + new Date(response.previousPeriod.end).toLocaleDateString());",
+                  "console.log('📈 CAMBIOS:');",
+                  "console.log('  🐦 Tweets: ' + response.changes.totalTweets.value + ' (' + response.changes.totalTweets.percentage.toFixed(1) + '%)');",
+                  "console.log('  📰 Noticias: ' + response.changes.totalNews.value + ' (' + response.changes.totalNews.percentage.toFixed(1) + '%)');",
+                  "console.log('  🚨 Alertas: ' + response.changes.totalAlerts.value + ' (' + response.changes.totalAlerts.percentage.toFixed(1) + '%)');",
+                  "console.log('  😊 Sentimiento: ' + response.changes.averageSentiment.value.toFixed(2) + ' (' + response.changes.averageSentiment.percentage.toFixed(1) + '%)');",
+                  "console.log('  ⚠️ Riesgo: ' + response.changes.averageRisk.value.toFixed(2) + ' (' + response.changes.averageRisk.percentage.toFixed(1) + '%)');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dashboard/analytics/comparative?startDate=2025-01-15&endDate=2025-01-22",
+              "host": ["{{base_url}}"],
+              "path": ["dashboard", "analytics", "comparative"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-15",
+                  "description": "Inicio del período a comparar"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-01-22",
+                  "description": "Fin del período a comparar"
+                }
+              ]
+            },
+            "description": "Comparar métricas entre dos períodos (actual vs anterior del mismo tamaño)"
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [
@@ -2005,6 +2884,11 @@
     },
     {
       "key": "first_job_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "last_export_id",
       "value": "",
       "type": "string"
     }
